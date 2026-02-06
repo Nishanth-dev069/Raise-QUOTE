@@ -376,7 +376,12 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
   doc.text(user?.full_name?.toUpperCase() || "SALES TEAM", pageWidth - margin, currentY, { align: "right" })
   currentY += 5
   doc.setFont("helvetica", "normal")
-  doc.text(user?.phone || "+91 91777 70365", pageWidth - margin, currentY, { align: "right" })
+  doc.setFontSize(8)
+  if (user?.phone) {
+    doc.text(`Contact: ${user.phone}`, pageWidth - margin, currentY, { align: "right" })
+  } else {
+    doc.text("Contact: +91 91777 70365", pageWidth - margin, currentY, { align: "right" })
+  }
 
   const pdfName = `${quotation.quotation_number}_Quotation.pdf`
   doc.save(pdfName)
