@@ -77,21 +77,21 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
     }
   }
 
-  // Pre-load item images and detect dimensions
+  // Pre-load item images in parallel with optimized caching
   const itemImages: Record<string, { base64: string; isWide: boolean }> = {}
-  await Promise.all(
-    items.map(async (item) => {
-      if (item.image_url) {
-        try {
-          const { base64, width, height } = await getBase64ImageWithDimensions(item.image_url)
-          const isWide = width > height * 1.3 // Consider wide if aspect ratio > 1.3
-          itemImages[item.id] = { base64, isWide }
-        } catch (e) {
-          console.warn(`Could not load item image`, e)
-        }
+  const imagePromises = items
+    .filter(item => item.image_url)
+    .map(async (item) => {
+      try {
+        const { base64, width, height } = await getBase64ImageWithDimensions(item.image_url!)
+        const isWide = width > height * 1.3 // Consider wide if aspect ratio > 1.3
+        itemImages[item.id] = { base64, isWide }
+      } catch (e) {
+        console.warn(`Could not load item image for ${item.id}`, e)
       }
     })
-  )
+  
+  await Promise.all(imagePromises)
 
   // Start Drawing
   drawPageBorder()

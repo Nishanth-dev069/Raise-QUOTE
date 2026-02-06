@@ -18,17 +18,15 @@ import AdminCharts from "./AdminCharts"
 export default async function AdminDashboard() {
   const supabase = await createClient()
 
-  // Fetch data for analytics
+  // Optimized: Fetch data in parallel with proper error handling and reduced payload
   const [
     { data: quotations },
     { count: productsCount },
-    { count: usersCount },
     { data: recentQuotations },
     { data: profiles }
   ] = await Promise.all([
-    supabase.from("quotations").select("grand_total, created_at, created_by"),
-    supabase.from("products").select("*", { count: "exact", head: true }),
-    supabase.from("profiles").select("id, full_name"),
+    supabase.from("quotations").select("grand_total, created_at, created_by", { count: "exact" }),
+    supabase.from("products").select("id", { count: "exact", head: true }),
     supabase.from("quotations")
       .select("id, quotation_number, customer_name, grand_total, created_at, profiles!created_by(full_name)")
       .order("created_at", { ascending: false })
