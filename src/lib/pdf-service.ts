@@ -395,11 +395,15 @@ const getBase64ImageFromURL = (url: string): Promise<string> => {
     img.setAttribute("crossOrigin", "anonymous")
     img.onload = () => {
       const canvas = document.createElement("canvas")
-      canvas.width = img.width
-      canvas.height = img.height
+      // Optimize: Reduce image size for PDFs (max width 800px)
+      const maxWidth = 800
+      const scale = img.width > maxWidth ? maxWidth / img.width : 1
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
       const ctx = canvas.getContext("2d")
-      ctx?.drawImage(img, 0, 0)
-      const dataURL = canvas.toDataURL("image/png")
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
+      // Use JPEG with 85% quality for smaller file size
+      const dataURL = canvas.toDataURL("image/jpeg", 0.85)
       resolve(dataURL)
     }
     img.onerror = (error) => {
@@ -415,11 +419,15 @@ const getBase64ImageWithDimensions = (url: string): Promise<{ base64: string; wi
     img.setAttribute("crossOrigin", "anonymous")
     img.onload = () => {
       const canvas = document.createElement("canvas")
-      canvas.width = img.width
-      canvas.height = img.height
+      // Optimize: Reduce image size for PDFs (max width 800px)
+      const maxWidth = 800
+      const scale = img.width > maxWidth ? maxWidth / img.width : 1
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
       const ctx = canvas.getContext("2d")
-      ctx?.drawImage(img, 0, 0)
-      const dataURL = canvas.toDataURL("image/png")
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
+      // Use JPEG with 85% quality for smaller file size
+      const dataURL = canvas.toDataURL("image/jpeg", 0.85)
       resolve({ base64: dataURL, width: img.width, height: img.height })
     }
     img.onerror = (error) => {
