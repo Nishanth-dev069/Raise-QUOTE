@@ -457,17 +457,18 @@ export default function ProductsPage() {
       </div>
 
       <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-              <TableHead className="w-20 px-6">Image</TableHead>
-              <TableHead>Details</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right px-6">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
+                <TableHead className="w-20 px-6 whitespace-nowrap">Image</TableHead>
+                <TableHead className="whitespace-nowrap">Details</TableHead>
+                <TableHead className="whitespace-nowrap">Category</TableHead>
+                <TableHead className="whitespace-nowrap">Price</TableHead>
+                <TableHead className="whitespace-nowrap">Status</TableHead>
+                <TableHead className="text-right px-6 whitespace-nowrap">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow><TableCell colSpan={6} className="h-48 text-center font-medium text-gray-400">Fetching products...</TableCell></TableRow>
@@ -535,6 +536,7 @@ export default function ProductsPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   )
