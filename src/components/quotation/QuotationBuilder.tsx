@@ -501,6 +501,16 @@ const pdfBlob = await generateQuotationPDF({
                       />
                     </div>
                     <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-gray-700">Validity (Days)</Label>
+                      <Input
+                        type="number"
+                        className="h-11 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all"
+                        value={meta.validity_days}
+                        onChange={(e) => setMeta({ ...meta, validity_days: parseInt(e.target.value) || 30 })}
+                        min="1"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
                       <Label className="text-xs font-bold text-gray-700">Currency</Label>
                       <div className="flex gap-2">
                         <button
