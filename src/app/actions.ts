@@ -9,10 +9,31 @@ export async function saveQuotation(data: any) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  // Get the last quotation number for sequential numbering
+  const { data: lastQuotation } = await supabase
+    .from('quotations')
+    .select('quotation_number')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  let quotationNumber = data.quotation_number
+  if (lastQuotation?.quotation_number) {
+    // Extract number from format like "RLE-107" and increment
+    const match = lastQuotation.quotation_number.match(/RLE-(\d+)/)
+    if (match) {
+      const nextNumber = parseInt(match[1]) + 1
+      quotationNumber = `RLE-${nextNumber}`
+    }
+  } else {
+    // First quotation
+    quotationNumber = 'RLE-101'
+  }
+
   const { error } = await supabase
     .from('quotations')
     .insert({
-      quotation_number: data.quotation_number,
+      quotation_number: quotationNumber,
       created_by: user.id,
       customer_name: data.customer_name,
       customer_phone: data.customer_phone,
@@ -32,7 +53,7 @@ export async function saveQuotation(data: any) {
   }
 
   revalidatePath('/admin/quotations')
-  return { success: true }
+  return { success: true, quotationNumber }
 }
 
 export async function uploadQuotationPDF(fileName: string, blob: Blob) {
