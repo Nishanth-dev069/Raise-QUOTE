@@ -10,6 +10,7 @@ export async function upsertProduct(formData: FormData) {
   const price = parseFloat(formData.get('price') as string)
   const tax_percent = parseFloat(formData.get('tax_percent') as string)
   const active = formData.get('active') === 'true'
+  const image_format = formData.get('image_format') as string || 'wide'
   const imageFile = formData.get('image') as File | null
 
   let image_url = formData.get('existing_image_url') as string
@@ -38,7 +39,8 @@ export async function upsertProduct(formData: FormData) {
     price,
     tax_percent,
     active,
-    image_url
+    image_url,
+    image_format
   }
 
   if (id) {
