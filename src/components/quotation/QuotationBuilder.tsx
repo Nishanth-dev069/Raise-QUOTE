@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { 
-  Plus, 
-  Trash2, 
-  Download, 
-  Trash, 
+import {
+  Plus,
+  Trash2,
+  Download,
+  Trash,
   Search,
   User,
   Hash,
@@ -98,15 +98,15 @@ interface QuotationBuilderProps {
 type Currency = 'INR' | 'USD'
 
 const DEFAULT_TERMS = [
-  "1. Taxes: 18% GST extra applicable",
-  "2. Packaging & Forwarding: Extra As Applicable",
-  "3. Fright: T0 Pay / Extra as applicable",
-  "4. DELIVERY: We deliver the order in 3-4 Weeks from the date of receipt of purchase order",
-  "5. INSTALLATION: Fees extra as applicable",
-  "6. PAYMENT: 100% payment at the time of proforma invoice prior to dispatch.",
-  "7. WARRANTY: One year warranty from the date of dispatch",
-  "8. GOVERNING LAW: These Terms and Conditions and any action related hereto shall be governed, controlled, interpreted and defined by and under the laws of the State of Telangana",
-  "9. MODIFICATION: Any modification of these Terms and Conditions shall be valid only if it is in writing and signed by the authorized representatives of both Supplier and Customer."
+  "Taxes: 18% GST extra applicable",
+  "Packaging & Forwarding: Extra As Applicable",
+  "Fright: To Pay / Extra as applicable",
+  "DELIVERY: We deliver the order in 3-4 Weeks from the date of receipt of purchase order",
+  "INSTALLATION: Fees extra as applicable",
+  "PAYMENT: 100% payment at the time of proforma invoice prior to dispatch.",
+  "WARRANTY: One year warranty from the date of dispatch",
+  "GOVERNING LAW: These Terms and Conditions and any action related hereto shall be governed, controlled, interpreted and defined by and under the laws of the State of Telangana",
+  "MODIFICATION: Any modification of these Terms and Conditions shall be valid only if it is in writing and signed by the authorized representatives of both Supplier and Customer."
 ]
 
 export default function QuotationBuilder({ initialProducts, settings, user }: QuotationBuilderProps) {
@@ -143,6 +143,7 @@ export default function QuotationBuilder({ initialProducts, settings, user }: Qu
         setCustomer(parsed.customer || { name: "", phone: "", email: "", address: "" })
         setMeta(parsed.meta || { number: `QT-${Date.now().toString().slice(-6)}`, date: new Date().toISOString().split("T")[0] })
         setDiscount(parsed.discount || 0)
+        // Check if parsing sets old numbers, if so, re-initialize defaults or just use what's saved
         if (parsed.terms) {
           setTerms(parsed.terms)
         }
@@ -165,11 +166,11 @@ export default function QuotationBuilder({ initialProducts, settings, user }: Qu
       const addonsPrice = item.selectedAddons?.reduce((sum, addon) => sum + addon.price, 0) || 0
       return acc + (item.price + addonsPrice) * item.qty
     }, 0)
-    
+
     const tax_rate = settings?.tax_rate || 0
     const tax_amount = (subtotal - discount) * (tax_rate / 100)
     const grand_total = Math.max(0, subtotal - discount + tax_amount)
-    
+
     return { subtotal, tax_amount, grand_total }
   }, [items, discount, settings?.tax_rate])
 
@@ -206,7 +207,7 @@ export default function QuotationBuilder({ initialProducts, settings, user }: Qu
       if (item.id === itemId) {
         const currentAddons = item.selectedAddons || []
         const exists = currentAddons.find(a => a.name === addon.name)
-        const nextAddons = exists 
+        const nextAddons = exists
           ? currentAddons.filter(a => a.name !== addon.name)
           : [...currentAddons, addon]
         return { ...item, selectedAddons: nextAddons }
@@ -257,8 +258,6 @@ export default function QuotationBuilder({ initialProducts, settings, user }: Qu
         return
       }
 
-      const selectedTermsText = terms.filter(t => t.selected).map(t => t.text).join("\n")
-
       const { data, error } = await supabase.from("quotations").insert({
         quotation_number: meta.number,
         created_by: session.user.id,
@@ -277,14 +276,28 @@ export default function QuotationBuilder({ initialProducts, settings, user }: Qu
 
       if (error) throw error
 
-const pdfBlob = await generateQuotationPDF({
-          quotation: data,
-          items,
-          settings,
-          user,
-          selectedTerms: terms.filter(t => t.selected).map(t => ({ title: t.text.split(':')[0], text: t.text.split(':').slice(1).join(':').trim() })),
-          currency
-        })
+      // PREPARE DATA FOR PDF - including currency conversion
+      const EXCHANGE_RATE = 86; // Approx. INR to USD. Ideally fetched, but fixed for now.
+
+      const pdfItems = currency === 'USD'
+        ? items.map(item => ({
+          ...item,
+          price: Number((item.price / EXCHANGE_RATE).toFixed(2)),
+          selectedAddons: item.selectedAddons?.map(addon => ({
+            ...addon,
+            price: Number((addon.price / EXCHANGE_RATE).toFixed(2))
+          }))
+        }))
+        : items;
+
+      const pdfBlob = await generateQuotationPDF({
+        quotation: data,
+        items: pdfItems, // Pass converted items
+        settings,
+        user,
+        selectedTerms: terms.filter(t => t.selected).map(t => ({ title: t.text.split(':')[0], text: t.text.split(':').slice(1).join(':').trim() })),
+        currency
+      })
 
       const fileName = `${data.quotation_number}_${data.id}.pdf`
       const { error: uploadError } = await supabase.storage
@@ -300,7 +313,7 @@ const pdfBlob = await generateQuotationPDF({
         const { data: { publicUrl } } = supabase.storage
           .from("quotations")
           .getPublicUrl(fileName)
-        
+
         await supabase
           .from("quotations")
           .update({ pdf_url: publicUrl })
@@ -319,7 +332,7 @@ const pdfBlob = await generateQuotationPDF({
     <div className="flex min-h-screen bg-[#FDFDFD]">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
@@ -339,55 +352,55 @@ const pdfBlob = await generateQuotationPDF({
               <X className="h-5 w-5" />
             </button>
           </div>
-          
-            <nav className="flex-1 space-y-1 px-4 py-6">
-              <Link 
-                href="/"
-                className="flex items-center gap-3 rounded-xl bg-black px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all"
-              >
-                <Plus className="h-5 w-5" />
-                New Quotation
-              </Link>
-              <Link 
-                href={user?.role === 'admin' ? "/admin/quotations" : "/quotations"}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-black transition-all"
-              >
-                <Hash className="h-5 w-5" />
-                Quotations
-              </Link>
-              <div className="my-6 h-px bg-gray-50" />
-              <Link 
-                href={user?.role === 'admin' ? "/admin/products" : "/catalog"}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-black transition-all"
-              >
-                <Package className="h-5 w-5" />
-                Catalog
-              </Link>
-              {user?.role === 'admin' && (
-                <Link 
-                  href="/admin/users"
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-black transition-all"
-                >
-                  <User className="h-5 w-5" />
-                  Team
-                </Link>
-              )}
-            </nav>
 
-            <div className="border-t border-gray-50 p-4">
-              <div className="flex items-center gap-3 px-2 py-3 rounded-xl bg-gray-50/50">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white uppercase">
-                  {user?.full_name?.[0] || 'A'}
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <p className="truncate text-xs font-bold text-black">{user?.full_name || 'Admin'}</p>
-                  <p className="truncate text-[10px] font-medium text-gray-400 uppercase tracking-wider">Professional</p>
-                </div>
-                <Link href="/auth/signout" className="text-gray-400 hover:text-red-500 transition-colors">
-                  <LogOut className="h-4 w-4" />
-                </Link>
+          <nav className="flex-1 space-y-1 px-4 py-6">
+            <Link
+              href="/"
+              className="flex items-center gap-3 rounded-xl bg-black px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all"
+            >
+              <Plus className="h-5 w-5" />
+              New Quotation
+            </Link>
+            <Link
+              href={user?.role === 'admin' ? "/admin/quotations" : "/quotations"}
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-black transition-all"
+            >
+              <Hash className="h-5 w-5" />
+              Quotations
+            </Link>
+            <div className="my-6 h-px bg-gray-50" />
+            <Link
+              href={user?.role === 'admin' ? "/admin/products" : "/catalog"}
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-black transition-all"
+            >
+              <Package className="h-5 w-5" />
+              Catalog
+            </Link>
+            {user?.role === 'admin' && (
+              <Link
+                href="/admin/users"
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-black transition-all"
+              >
+                <User className="h-5 w-5" />
+                Team
+              </Link>
+            )}
+          </nav>
+
+          <div className="border-t border-gray-50 p-4">
+            <div className="flex items-center gap-3 px-2 py-3 rounded-xl bg-gray-50/50">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white uppercase">
+                {user?.full_name?.[0] || 'A'}
               </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="truncate text-xs font-bold text-black">{user?.full_name || 'Admin'}</p>
+                <p className="truncate text-[10px] font-medium text-gray-400 uppercase tracking-wider">Professional</p>
+              </div>
+              <Link href="/auth/signout" className="text-gray-400 hover:text-red-500 transition-colors">
+                <LogOut className="h-4 w-4" />
+              </Link>
             </div>
+          </div>
         </div>
       </aside>
 
@@ -419,7 +432,7 @@ const pdfBlob = await generateQuotationPDF({
               <Button variant="outline" onClick={clearQuotation} className="h-11 rounded-xl px-5 font-bold border-gray-200 hover:bg-red-50 hover:text-red-600 transition-all">
                 Reset
               </Button>
-              <Button 
+              <Button
                 disabled={saving}
                 onClick={handleDownload}
                 className="h-11 flex-1 rounded-xl bg-black px-8 font-bold text-white shadow-xl shadow-black/20 hover:bg-black/90 active:scale-95 transition-all sm:flex-none"
@@ -478,67 +491,65 @@ const pdfBlob = await generateQuotationPDF({
                 </CardContent>
               </Card>
 
-                <Card className="border-none bg-white shadow-sm ring-1 ring-gray-100 rounded-2xl">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-sm font-black uppercase tracking-widest text-gray-400">Quotation Meta</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-gray-700">Quotation ID</Label>
-                      <Input
-                        className="h-11 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-mono"
-                        value={meta.number}
-                        onChange={(e) => setMeta({ ...meta, number: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-gray-700">Issue Date</Label>
-                      <Input
-                        type="date"
-                        className="h-11 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all"
-                        value={meta.date}
-                        onChange={(e) => setMeta({ ...meta, date: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-gray-700">Validity (Days)</Label>
-                      <Input
-                        type="number"
-                        className="h-11 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all"
-                        value={meta.validity_days}
-                        onChange={(e) => setMeta({ ...meta, validity_days: parseInt(e.target.value) || 30 })}
-                        min="1"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-gray-700">Currency</Label>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setCurrency('INR')}
-                          className={`flex-1 h-11 rounded-xl font-bold transition-all ${
-                            currency === 'INR' 
-                              ? 'bg-black text-white' 
-                              : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+              <Card className="border-none bg-white shadow-sm ring-1 ring-gray-100 rounded-2xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-sm font-black uppercase tracking-widest text-gray-400">Quotation Meta</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-gray-700">Quotation ID</Label>
+                    <Input
+                      className="h-11 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-mono"
+                      value={meta.number}
+                      onChange={(e) => setMeta({ ...meta, number: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-gray-700">Issue Date</Label>
+                    <Input
+                      type="date"
+                      className="h-11 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all"
+                      value={meta.date}
+                      onChange={(e) => setMeta({ ...meta, date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-gray-700">Validity (Days)</Label>
+                    <Input
+                      type="number"
+                      className="h-11 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all"
+                      value={meta.validity_days}
+                      onChange={(e) => setMeta({ ...meta, validity_days: parseInt(e.target.value) || 30 })}
+                      min="1"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-gray-700">Currency</Label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCurrency('INR')}
+                        className={`flex-1 h-11 rounded-xl font-bold transition-all ${currency === 'INR'
+                          ? 'bg-black text-white'
+                          : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                           }`}
-                        >
-                          INR
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCurrency('USD')}
-                          className={`flex-1 h-11 rounded-xl font-bold transition-all ${
-                            currency === 'USD' 
-                              ? 'bg-black text-white' 
-                              : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                      >
+                        INR
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurrency('USD')}
+                        className={`flex-1 h-11 rounded-xl font-bold transition-all ${currency === 'USD'
+                          ? 'bg-black text-white'
+                          : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                           }`}
-                        >
-                          USD
-                        </button>
-                      </div>
+                      >
+                        USD
+                      </button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Line Items */}
@@ -568,7 +579,7 @@ const pdfBlob = await generateQuotationPDF({
                               </div>
                               <div className="flex flex-col">
                                 <span className="text-sm font-bold text-black">{product.name}</span>
-                                  <span className="text-[10px] font-bold text-gray-400 uppercase">{currency === 'INR' ? '₹' : '$'}{product.price.toLocaleString()}</span>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase">{currency === 'INR' ? '₹' : '$'}{product.price.toLocaleString()}</span>
                               </div>
                             </CommandItem>
                           ))}
@@ -580,7 +591,8 @@ const pdfBlob = await generateQuotationPDF({
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <Table>
+                  {/* Desktop Table View */}
+                  <Table className="hidden md:table">
                     <TableHeader>
                       <TableRow className="border-gray-50 hover:bg-transparent">
                         <TableHead className="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Item Details</TableHead>
@@ -610,24 +622,24 @@ const pdfBlob = await generateQuotationPDF({
                                     <p className="text-sm font-black text-black uppercase tracking-tight">{item.name}</p>
                                     <p className="text-xs text-gray-400 line-clamp-1">{item.description}</p>
                                   </div>
-                                  
+
                                   {/* Addons Selection with Checkboxes */}
                                   <div className="space-y-2">
                                     <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Available Addons</p>
                                     <div className="flex flex-wrap gap-3">
                                       {initialProducts.find(p => p.id === item.product_id)?.addons?.map((addon) => (
-                                        <div 
+                                        <div
                                           key={addon.name}
                                           className="flex items-center space-x-2 bg-gray-50/50 px-3 py-1.5 rounded-lg border border-gray-100 hover:border-black/10 transition-colors cursor-pointer"
                                           onClick={() => toggleAddon(item.id, addon)}
                                         >
-                                          <Checkbox 
+                                          <Checkbox
                                             id={`addon-${item.id}-${addon.name}`}
                                             checked={!!item.selectedAddons?.find(a => a.name === addon.name)}
                                             onCheckedChange={() => toggleAddon(item.id, addon)}
                                             className="data-[state=checked]:bg-black data-[state=checked]:border-black"
                                           />
-                                          <label 
+                                          <label
                                             htmlFor={`addon-${item.id}-${addon.name}`}
                                             className="text-[10px] font-bold text-gray-600 cursor-pointer"
                                           >
@@ -676,6 +688,92 @@ const pdfBlob = await generateQuotationPDF({
                       )}
                     </TableBody>
                   </Table>
+
+                  {/* Mobile Card View */}
+                  <div className="flex flex-col gap-4 p-4 md:hidden">
+                    {items.length === 0 ? (
+                      <div className="h-48 flex items-center justify-center text-center text-sm font-medium text-gray-400 bg-gray-50/50 rounded-xl">
+                        Add products to build your quotation
+                      </div>
+                    ) : (
+                      items.map((item) => (
+                        <div key={item.id} className="relative flex flex-col gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                          <div className="flex items-start gap-4">
+                            <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-white">
+                              {item.image_url && <Image src={item.image_url} alt={item.name} fill className="object-contain p-2" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="pr-8">
+                                <p className="text-sm font-black text-black uppercase tracking-tight truncate">{item.name}</p>
+                                <p className="text-xs text-gray-400 line-clamp-2 mt-1">{item.description}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => removeItem(item.id)}
+                              className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg text-gray-200 hover:bg-red-50 hover:text-red-500 transition-all"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] font-bold uppercase text-gray-400">Qty</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                className="h-10 w-full rounded-xl border-gray-100 bg-gray-50/50 text-center font-bold focus:bg-white"
+                                value={item.qty}
+                                onChange={(e) => updateItem(item.id, { qty: parseInt(e.target.value) || 1 })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] font-bold uppercase text-gray-400">Unit Price</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">₹</span>
+                                <Input
+                                  type="number"
+                                  className="h-10 w-full rounded-xl border-gray-100 bg-gray-50/50 pl-6 pr-2 font-bold focus:bg-white"
+                                  value={item.price}
+                                  onChange={(e) => updateItem(item.id, { price: parseFloat(e.target.value) || 0 })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Addons Mobile */}
+                          {initialProducts.find(p => p.id === item.product_id)?.addons && (initialProducts.find(p => p.id === item.product_id)?.addons?.length || 0) > 0 && (
+                            <div className="space-y-2 pt-2 border-t border-gray-50">
+                              <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Addons</p>
+                              <div className="flex flex-wrap gap-2">
+                                {initialProducts.find(p => p.id === item.product_id)?.addons?.map((addon) => (
+                                  <div
+                                    key={addon.name}
+                                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-colors cursor-pointer ${item.selectedAddons?.find(a => a.name === addon.name)
+                                      ? 'bg-black text-white border-black'
+                                      : 'bg-gray-50 border-gray-100 text-gray-600'
+                                      }`}
+                                    onClick={() => toggleAddon(item.id, addon)}
+                                  >
+                                    <span className="text-[10px] font-bold">
+                                      {addon.name} (+₹{addon.price.toLocaleString()})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                            <span className="text-xs font-bold text-gray-400 uppercase">Subtotal</span>
+                            <span className="text-lg font-black text-black">
+                              ₹{((item.price + (item.selectedAddons?.reduce((s, a) => s + a.price, 0) || 0)) * item.qty).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </CardContent>
               {items.length > 0 && (
@@ -685,23 +783,23 @@ const pdfBlob = await generateQuotationPDF({
                       <span>Subtotal</span>
                       <span className="text-black">{currency === 'INR' ? '₹' : '$'}{totals.subtotal.toLocaleString()}</span>
                     </div>
-                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                        <span>Adjustment</span>
-                        <div className="relative">
-                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">-{currency === 'INR' ? '₹' : '$'}</span>
-                           <Input
-                             type="number"
-                             className="h-8 w-28 rounded-lg border-gray-200 bg-white pl-7 pr-2 text-right font-bold text-black"
-                             value={discount}
-                             onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                           />
-                        </div>
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                      <span>Adjustment</span>
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">-{currency === 'INR' ? '₹' : '$'}</span>
+                        <Input
+                          type="number"
+                          className="h-8 w-28 rounded-lg border-gray-200 bg-white pl-7 pr-2 text-right font-bold text-black"
+                          value={discount}
+                          onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                        />
                       </div>
-                      <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                        <span>Tax ({settings?.tax_rate || 18}%)</span>
-                        <span className="text-black">{currency === 'INR' ? '₹' : '$'}{totals.tax_amount.toLocaleString()}</span>
-                      </div>
-                      <div className="h-px bg-gray-100" />
+                    </div>
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                      <span>Tax ({settings?.tax_rate || 18}%)</span>
+                      <span className="text-black">{currency === 'INR' ? '₹' : '$'}{totals.tax_amount.toLocaleString()}</span>
+                    </div>
+                    <div className="h-px bg-gray-100" />
                     <div className="flex items-end justify-between">
                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black">Grand Total</span>
                       <span className="text-3xl font-black tracking-tighter text-black">{currency === 'INR' ? '₹' : '$'}{totals.grand_total.toLocaleString()}</span>
@@ -719,18 +817,18 @@ const pdfBlob = await generateQuotationPDF({
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {terms.map((term) => (
-                    <div 
-                      key={term.id} 
+                    <div
+                      key={term.id}
                       className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50/50 transition-colors group cursor-pointer"
                       onClick={() => toggleTerm(term.id)}
                     >
-                      <Checkbox 
+                      <Checkbox
                         id={term.id}
                         checked={term.selected}
                         onCheckedChange={() => toggleTerm(term.id)}
                         className="mt-1 data-[state=checked]:bg-black data-[state=checked]:border-black"
                       />
-                      <Label 
+                      <Label
                         htmlFor={term.id}
                         className="text-sm font-medium leading-relaxed text-gray-600 group-hover:text-black transition-colors cursor-pointer"
                       >

@@ -29,7 +29,7 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
     doc.setDrawColor(0, 82, 156)
     doc.setLineWidth(1.2)
     doc.rect(5, 5, pageWidth - 10, pageHeight - 10)
-    
+
     // Inner Orange Border
     doc.setDrawColor(255, 102, 0)
     doc.setLineWidth(0.8)
@@ -40,31 +40,35 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
     doc.setLineWidth(0.3)
     doc.rect(margin + 10, pageHeight - 20, pageWidth - (margin * 2) - 20, 8)
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(7)
+    doc.setFontSize(8)
     doc.setTextColor(0)
     doc.text("Write us: info@raiselabequip.com / sales@raiselabequip.com | Contact: +91 91777 70365", pageWidth / 2, pageHeight - 14.5, { align: "center" })
   }
 
   const drawHeader = (logoBase64: string) => {
-    // Logo on top-left with increased height
+    // Logo on top-left with increased dimensions for better fill
     if (logoBase64) {
-      doc.addImage(logoBase64, "JPEG", margin, 10, 60, 22)
+      doc.addImage(logoBase64, "JPEG", margin, 12, 70, 25)
     }
 
-    // Address on top-right
+    // Address on top-right - Formatted to fill space better
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(10)
-    doc.setTextColor(0)
+    doc.setFontSize(11)
+    doc.setTextColor(0, 82, 156) // Raise Blue
+    doc.text("RAISE LAB EQUIPMENT", pageWidth - margin, 18, { align: "right" })
+
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.setTextColor(60)
     const address = "C-6, B1, Industrial Park, Moula Ali,\nHyderabad, Secunderabad,\nTelangana 500040"
-    const splitAddress = doc.splitTextToSize(address, 70)
-    doc.text(splitAddress, pageWidth - margin, 12, { align: "right" })
+    doc.text(address, pageWidth - margin, 24, { align: "right", lineHeightFactor: 1.4 })
 
     doc.setDrawColor(0, 82, 156)
     doc.setLineWidth(0.5)
-    doc.line(margin, 38, pageWidth - margin, 38)
+    doc.line(margin, 42, pageWidth - margin, 42)
     doc.setDrawColor(255, 102, 0)
     doc.setLineWidth(0.3)
-    doc.line(margin, 39, pageWidth - margin, 39)
+    doc.line(margin, 43, pageWidth - margin, 43)
   }
 
   // Pre-load quotation logo (use JPG)
@@ -88,7 +92,7 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
         console.warn(`Could not load item image for ${item.id}`, e)
       }
     })
-  
+
   await Promise.all(imagePromises)
 
   // Calculate total pages
@@ -107,7 +111,7 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
   drawHeader(logoBase64)
   drawPageNumber(pageNumber)
 
-  let currentY = 47
+  let currentY = 50
   let isFirstPage = true
 
   items.forEach((item, index) => {
@@ -117,7 +121,7 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
       drawPageBorder()
       drawHeader(logoBase64)
       drawPageNumber(pageNumber)
-      currentY = 47
+      currentY = 50
     }
 
     // "To" block - ONLY on first page, FIRST thing after header
@@ -125,17 +129,23 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
       // Calculate validity date
       const validityDate = new Date(quotation.created_at || Date.now())
       validityDate.setDate(validityDate.getDate() + (quotation.validity_days || 30))
-      
+
+      const toAddress = `To\n\n${quotation.customer_name}${quotation.customer_address ? '\n' + quotation.customer_address : ''}`;
+
+      const quoteNo = quotation.quotation_number;
+      const dateStr = new Date(quotation.created_at || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+      const validStr = validityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+
       autoTable(doc, {
         startY: currentY,
         body: [[
-          { 
-            content: `To\n\n${quotation.customer_name}${quotation.customer_address ? '\n' + quotation.customer_address : ''}`, 
-            styles: { fontStyle: "bold", fontSize: 10, valign: "top", cellPadding: 5 } 
+          {
+            content: toAddress,
+            styles: { fontStyle: "bold", fontSize: 10, valign: "top", cellPadding: 5 }
           },
-          { 
-            content: `Quote No\n${quotation.quotation_number}\n\nDate\n${new Date(quotation.created_at || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}\n\nValidity\n${validityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}`, 
-            styles: { fontSize: 10, valign: "top", cellPadding: 5 } 
+          {
+            content: `Quote No :  ${quoteNo}\nDate         :  ${dateStr}\nValidity    :  ${validStr}`,
+            styles: { fontSize: 10, valign: "middle", cellPadding: 6, fontStyle: "bold" }
           }
         ]],
         theme: "grid",
@@ -143,72 +153,43 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
           textColor: [0, 0, 0],
           lineColor: [0, 0, 0],
           lineWidth: 0.3,
-          minCellHeight: 35,
-          valign: "top"
+          minCellHeight: 30,
         },
         columnStyles: {
-          0: { cellWidth: pageWidth - (margin * 2) - 70, halign: "left" },
-          1: { cellWidth: 70, halign: "left" }
+          0: { cellWidth: pageWidth - (margin * 2) - 80, halign: "left" },
+          1: { cellWidth: 80, halign: "left" }
         },
         margin: { left: margin, right: margin },
         tableWidth: pageWidth - (margin * 2)
       })
-      currentY = (doc as any).lastAutoTable.finalY + 10
+      currentY = (doc as any).lastAutoTable.finalY + 12
       isFirstPage = false
     }
 
     // Technical & Commercial Offer Title
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(12)
+    doc.setFontSize(14)
+    doc.setTextColor(0, 82, 156)
     doc.text("Technical & Commercial Offer", pageWidth / 2, currentY, { align: "center" })
     currentY += 7
-    doc.setFontSize(11)
+    doc.setFontSize(12)
+    doc.setTextColor(0)
     doc.text(`For ${item.name}`, pageWidth / 2, currentY, { align: "center" })
-    currentY += 10
+    currentY += 12
 
-    // "To" block - first thing after header
-    if (isFirstPage) {
-      autoTable(doc, {
-        startY: currentY,
-        body: [[
-          { content: `To\n\n${quotation.customer_name}${quotation.customer_address ? '\n' + quotation.customer_address : ''}`, styles: { fontStyle: "bold", fontSize: 9 } },
-          { content: `Quote No: ${quotation.quotation_number}\n\nDate: ${new Date(quotation.created_at || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')}\n\nValidity: ${(() => {
-            const validityDate = new Date(quotation.created_at || Date.now())
-            validityDate.setDate(validityDate.getDate() + 30)
-            return validityDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
-          })()}`, styles: { fontSize: 9 } }
-        ]],
-        theme: "grid",
-        bodyStyles: {
-          textColor: [0, 0, 0],
-          lineColor: [0, 0, 0],
-          lineWidth: 0.2,
-          cellPadding: 4,
-          valign: "top"
-        },
-        columnStyles: {
-          0: { cellWidth: 100, halign: "left" },
-          1: { cellWidth: 65, halign: "left" }
-        },
-        margin: { left: margin, right: margin }
-      })
-      currentY = (doc as any).lastAutoTable.finalY + 8
-      isFirstPage = false
-    }
-
-    // Description
+    // Description section
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(9)
+    doc.setFontSize(10)
     doc.text("Description:", margin, currentY)
-    currentY += 5
+    currentY += 6
     doc.setFont("helvetica", "normal")
-    doc.setFontSize(8)
+    doc.setFontSize(9)
     const splitDesc = doc.splitTextToSize(item.description || "", pageWidth - (margin * 2))
     doc.text(splitDesc, margin, currentY)
-    currentY += (splitDesc.length * 4) + 3
+    currentY += (splitDesc.length * 5) + 5
 
     const imageData = itemImages[item.id]
-    
+
     // Get features and image format option from item
     const imageFormat = item.image_format || 'wide' // 'wide' or 'tall'
     const features = item.features || [
@@ -227,93 +208,105 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
 
     // Image layout based on admin selection
     if (imageFormat === 'wide') {
-      // Show wide image below description
+      // WIDE FORMAT: Image below description, then features
       if (imageData.base64) {
-        const imgWidth = pageWidth - (margin * 2) - 20
-        const imgHeight = 50
-        doc.addImage(imageData.base64, "PNG", margin + 10, currentY, imgWidth, imgHeight)
-        currentY += imgHeight + 8
+        // Ensure image fits within page width
+        const imgWidth = pageWidth - (margin * 2) - 10
+        const imgHeight = 65 // Increased height for better visibility
+        doc.addImage(imageData.base64, "PNG", margin + 5, currentY, imgWidth, imgHeight)
+        currentY += imgHeight + 10
       }
 
-      // Features below image
+      // Features list below image
       doc.setFont("helvetica", "bold")
-      doc.setFontSize(9)
+      doc.setFontSize(10)
       doc.text("FEATURES:", margin, currentY)
-      currentY += 5
-      
+      currentY += 6
+
       doc.setFont("helvetica", "normal")
-      doc.setFontSize(8)
+      doc.setFontSize(9)
       features.forEach((f: string) => {
         doc.text("•", margin + 3, currentY)
         const splitFeature = doc.splitTextToSize(f, pageWidth - (margin * 2) - 10)
         doc.text(splitFeature, margin + 8, currentY)
-        currentY += splitFeature.length * 3.5
+        currentY += splitFeature.length * 4.5
       })
       currentY += 5
     } else {
-      // Tall/Normal image layout: Features on left, image on right
+      // TALL FORMAT: Features on left, Image on right
       doc.setFont("helvetica", "bold")
-      doc.setFontSize(9)
+      doc.setFontSize(10)
       doc.text("FEATURES:", margin, currentY)
-      currentY += 5
-      
+      currentY += 6
+
       const featureStartY = currentY
       doc.setFont("helvetica", "normal")
-      doc.setFontSize(8)
-      
-      const maxFeatureWidth = imageData?.base64 ? 100 : pageWidth - (margin * 2) - 10
+      doc.setFontSize(9)
+
+      // Calculate widths: Features get 60%, Image gets 40% approx
+      const featureWidth = (pageWidth - (margin * 2)) * 0.60
+
       features.forEach((f: string) => {
         doc.text("•", margin + 3, currentY)
-        const splitFeature = doc.splitTextToSize(f, maxFeatureWidth)
+        const splitFeature = doc.splitTextToSize(f, featureWidth)
         doc.text(splitFeature, margin + 8, currentY)
-        currentY += splitFeature.length * 3.5
+        currentY += splitFeature.length * 4.5
       })
 
-      // Tall/Normal image on the right
+      // Tall image on the right
       if (imageData?.base64) {
-        doc.addImage(imageData.base64, "PNG", pageWidth - margin - 55, featureStartY - 3, 50, 50)
-      }
+        const imgX = margin + featureWidth + 10
+        const imgW = (pageWidth - (margin * 2)) * 0.35
+        const imgH = 60 // Fixed height for tall image
+        doc.addImage(imageData.base64, "PNG", imgX, featureStartY, imgW, imgH)
 
-      currentY = Math.max(currentY + 5, featureStartY + 55)
+        // Ensure new Y is below the taller of the two (features or image)
+        const imageEndY = featureStartY + imgH + 10
+        currentY = Math.max(currentY, imageEndY)
+      } else {
+        currentY += 5
+      }
     }
 
     // Specification
     if (item.specs && item.specs.length > 0) {
       doc.setFont("helvetica", "bold")
-      doc.setFontSize(9)
+      doc.setFontSize(10)
       doc.text("Specifications:", margin, currentY)
-      currentY += 5
+      currentY += 6
       doc.setFont("helvetica", "normal")
-      doc.setFontSize(8)
+      doc.setFontSize(9)
 
       item.specs.forEach((s: { key: string; value: string }) => {
         doc.text("•", margin + 3, currentY)
+        doc.setFont("helvetica", "bold")
         doc.text(s.key, margin + 8, currentY)
+        doc.setFont("helvetica", "normal")
         doc.text(s.value.startsWith(":") ? s.value : `: ${s.value}`, margin + 55, currentY)
-        currentY += 4
+        currentY += 5
       })
       currentY += 5
     }
 
     // Check if we need a new page for commercial offer
-    if (currentY > pageHeight - 80) {
+    if (currentY > pageHeight - 60) {
       doc.addPage()
       drawPageBorder()
       drawHeader(logoBase64)
-      currentY = 45
+      currentY = 50
     }
 
-    // Commercial Offer - formatted nicely
+    // Commercial Offer
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(10)
+    doc.setFontSize(11)
     doc.text("Commercial Offer:", margin, currentY)
-    currentY += 5
+    currentY += 6
 
     const tableRows = []
-    
-    // Main Product Row
+
+    // Calculate total price including add-ons
     const unitPrice = item.price + (item.selectedAddons?.reduce((s: number, a: any) => s + a.price, 0) || 0)
-    
+
     // Description Cell Content
     let descContent = item.name
     if (item.selectedAddons && item.selectedAddons.length > 0) {
@@ -324,10 +317,10 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
     }
 
     tableRows.push([
-      { content: "01", styles: { halign: "center", valign: "middle", fontSize: 9 } },
-      { content: descContent, styles: { halign: "left", valign: "middle", fontSize: 9, cellPadding: 3 } },
-      { content: "1", styles: { halign: "center", valign: "middle", fontSize: 9 } },
-      { content: `${currencySymbol} ${unitPrice.toLocaleString()}/-`, styles: { halign: "right", fontStyle: "bold", valign: "middle", fontSize: 12, cellPadding: 3 } }
+      { content: "01", styles: { halign: "center", valign: "middle", fontSize: 10 } },
+      { content: descContent, styles: { halign: "left", valign: "middle", fontSize: 10, cellPadding: 4 } },
+      { content: "1", styles: { halign: "center", valign: "middle", fontSize: 10 } },
+      { content: `${currencySymbol} ${unitPrice.toLocaleString('en-IN', { maximumFractionDigits: 2 })}/-`, styles: { halign: "center", fontStyle: "bold", valign: "middle", fontSize: 11, cellPadding: 4 } }
     ])
 
     autoTable(doc, {
@@ -342,20 +335,21 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
         lineWidth: 0.2,
         fontStyle: "bold",
         halign: "center",
-        fontSize: 9
+        fontSize: 10
       },
       bodyStyles: {
         textColor: [0, 0, 0],
         lineColor: [0, 0, 0],
         lineWidth: 0.2,
-        fontSize: 9,
+        fontSize: 10,
         cellPadding: 4
       },
       columnStyles: {
         0: { cellWidth: 15, halign: "center" },
         1: { cellWidth: "auto" },
         2: { cellWidth: 15, halign: "center" },
-        3: { cellWidth: 45, halign: "right" }
+        // Increased width for price to prevent overflow
+        3: { cellWidth: 50, halign: "center" }
       },
       margin: { left: margin, right: margin }
     })
@@ -370,7 +364,7 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
   drawHeader(logoBase64)
   drawPageNumber(pageNumber)
 
-  currentY = 47
+  currentY = 50
   doc.setFont("helvetica", "bold")
   doc.setFontSize(12)
   doc.text("Terms And Conditions:", margin, currentY)
@@ -378,41 +372,51 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
 
   doc.setFontSize(10)
   doc.text("HSN CODE", margin, currentY)
-  currentY += 5
+  currentY += 6
   doc.setFont("helvetica", "normal")
   doc.text("84799031", margin + 5, currentY)
-  currentY += 10
+  currentY += 12
 
-  const termsToDisplay = selectedTerms && selectedTerms.length > 0 ? selectedTerms : [
-    { title: "1. Taxes", text: "18% GST extra applicable" },
-    { title: "2. Packaging & Forwarding", text: "Extra As Applicable" },
-    { title: "3. Fright", text: "T0 Pay / Extra as applicable" },
-    { title: "4. DELIVERY", text: "We deliver the order in 3-4 Weeks from the date of receipt of purchase order" },
-    { title: "5. INSTALLATION", text: "Fees extra as applicable" },
-    { title: "6. PAYMENT", text: "100% payment at the time of proforma invoice prior to dispatch." },
-    { title: "7. WARRANTY", text: "One year warranty from the date of dispatch" },
-    { title: "8. GOVERNING LAW", text: "These Terms and Conditions and any action related hereto shall be governed, controlled, interpreted and defined by and under the laws of the State of Telangana" },
-    { title: "9. MODIFICATION", text: "Any modification of these Terms and Conditions shall be valid only if it is in writing and signed by the authorized representatives of both Supplier and Customer." }
+  // Default terms without numbering
+  const defaultTerms = [
+    { title: "Taxes", text: "18% GST extra applicable" },
+    { title: "Packaging & Forwarding", text: "Extra As Applicable" },
+    { title: "Freight", text: "To Pay / Extra as applicable" },
+    { title: "DELIVERY", text: "We deliver the order in 3-4 Weeks from the date of receipt of purchase order" },
+    { title: "INSTALLATION", text: "Fees extra as applicable" },
+    { title: "PAYMENT", text: "100% payment at the time of proforma invoice prior to dispatch." },
+    { title: "WARRANTY", text: "One year warranty from the date of dispatch" },
+    { title: "GOVERNING LAW", text: "These Terms and Conditions and any action related hereto shall be governed, controlled, interpreted and defined by and under the laws of the State of Telangana" },
+    { title: "MODIFICATION", text: "Any modification of these Terms and Conditions shall be valid only if it is in writing and signed by the authorized representatives of both Supplier and Customer." }
   ]
+
+  const termsToDisplay = selectedTerms && selectedTerms.length > 0 ? selectedTerms : defaultTerms;
 
   termsToDisplay.forEach((t) => {
     doc.setFont("helvetica", "normal")
     doc.setFontSize(9)
-    const fullText = `${t.title}: ${t.text}`
-    const splitT = doc.splitTextToSize(fullText, pageWidth - (margin * 2))
-    doc.text(splitT, margin, currentY)
-    currentY += (splitT.length * 4.5) + 3
+
+    // Remove any legacy number prefixes if present in custom terms
+    const cleanTitle = t.title.replace(/^\d+\.\s*/, '');
+    const fullText = `${cleanTitle}: ${t.text}`
+
+    // Draw bullet point
+    doc.text("•", margin, currentY)
+
+    const splitT = doc.splitTextToSize(fullText, pageWidth - (margin * 2) - 5)
+    doc.text(splitT, margin + 5, currentY)
+    currentY += (splitT.length * 5) + 3
   })
 
-  currentY += 10
+  currentY += 15
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(9)
+  doc.setFontSize(10)
   doc.text(`From ${settings?.company_name || "Raise Lab Equipment"}`, pageWidth - margin, currentY, { align: "right" })
-  currentY += 5
+  currentY += 6
   doc.text(user?.full_name?.toUpperCase() || "SALES TEAM", pageWidth - margin, currentY, { align: "right" })
-  currentY += 5
+  currentY += 6
   doc.setFont("helvetica", "normal")
-  doc.setFontSize(8)
+  doc.setFontSize(9)
   if (user?.phone) {
     doc.text(`Contact: ${user.phone}`, pageWidth - margin, currentY, { align: "right" })
   } else {
@@ -421,7 +425,7 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
 
   const pdfName = `${quotation.quotation_number}_Quotation.pdf`
   doc.save(pdfName)
-  
+
   return doc.output("blob")
 }
 

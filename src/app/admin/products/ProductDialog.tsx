@@ -14,9 +14,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Loader2, Image as ImageIcon } from 'lucide-react'
+import { Plus, Loader2, Image as ImageIcon, LayoutTemplate } from 'lucide-react'
 import { upsertProduct } from './actions'
 import { toast } from 'sonner'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function ProductDialog({ product }: { product?: any }) {
   const [open, setOpen] = useState(false)
@@ -85,26 +92,43 @@ export default function ProductDialog({ product }: { product?: any }) {
                   </Label>
                 </div>
               </div>
-              <Input 
-                id="image" 
-                name="image" 
-                type="file" 
-                accept="image/*" 
-                className="hidden" 
+              <Input
+                id="image"
+                name="image"
+                type="file"
+                accept="image/*"
+                className="hidden"
                 onChange={handleImageChange}
               />
               <p className="text-xs text-gray-500">Upload product image (JPG, PNG, WEBP)</p>
+              <p className="text-xs text-gray-500">Upload product image (JPG, PNG, WEBP)</p>
             </div>
 
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Product Name</Label>
-                <Input id="name" name="name" defaultValue={product?.name} placeholder="e.g. Premium Office Desk" required />
+            <div className="grid gap-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Product Name</Label>
+                  <Input id="name" name="name" defaultValue={product?.name} placeholder="e.g. Premium Office Desk" required />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="image_format">Image Orientation</Label>
+                  <Select name="image_format" defaultValue={product?.image_format || 'wide'}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="wide">Wide (Standard)</SelectItem>
+                      <SelectItem value="tall">Tall / Square</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea id="description" name="description" defaultValue={product?.description} placeholder="Short description for the quote..." />
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="price">Base Price (₹)</Label>
@@ -116,11 +140,11 @@ export default function ProductDialog({ product }: { product?: any }) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  id="active" 
-                  name="active" 
-                  value="true" 
+                <input
+                  type="checkbox"
+                  id="active"
+                  name="active"
+                  value="true"
                   defaultChecked={product ? product.active : true}
                   className="rounded border-gray-300"
                 />
@@ -129,8 +153,8 @@ export default function ProductDialog({ product }: { product?: any }) {
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="bg-black hover:bg-gray-800 text-white w-full h-11"
               disabled={isLoading}
             >

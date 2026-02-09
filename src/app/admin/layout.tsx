@@ -29,8 +29,8 @@ export default async function AdminLayout({
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gray-50/50">
         <AdminSidebar />
-        <main className="flex-1 min-w-0 overflow-y-auto p-4 md:p-8 md:pl-12">
-          <div className="mx-auto w-full max-w-7xl">
+        <main className="flex-1 min-w-0 overflow-y-auto p-4 md:p-8 lg:pl-64 transition-all duration-300">
+          <div className="mx-auto w-full max-w-7xl pt-16 lg:pt-0">
             {children}
           </div>
         </main>

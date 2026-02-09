@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache'
 
 export async function upsertProduct(formData: FormData) {
   const supabase = await createClient()
-  
+
   const id = formData.get('id') as string
   const name = formData.get('name') as string
   const description = formData.get('description') as string
@@ -29,7 +29,7 @@ export async function upsertProduct(formData: FormData) {
     const { data: { publicUrl } } = supabase.storage
       .from('products')
       .getPublicUrl(filePath)
-    
+
     image_url = publicUrl
   }
 
@@ -48,13 +48,13 @@ export async function upsertProduct(formData: FormData) {
       .from('products')
       .update(productData)
       .eq('id', id)
-    
+
     if (error) return { error: error.message }
   } else {
     const { error } = await supabase
       .from('products')
       .insert(productData)
-    
+
     if (error) return { error: error.message }
   }
 
@@ -64,7 +64,7 @@ export async function upsertProduct(formData: FormData) {
 
 export async function deleteProduct(id: string) {
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('products')
     .delete()
@@ -78,7 +78,7 @@ export async function deleteProduct(id: string) {
 
 export async function toggleProductStatus(id: string, active: boolean) {
   const supabase = await createClient()
-  
+
   const { error } = await supabase
     .from('products')
     .update({ active })
