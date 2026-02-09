@@ -21,7 +21,10 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 15
-  const currencySymbol = currency === 'INR' ? '₹' : '$'
+  // Use text 'Rs.' instead of symbol if fonts are an issue, or ensure correct encoding.
+  // The user reported "1" appearing, which is a common encoding issue with basic fonts in jsPDF.
+  // Switching to 'Rs.' is the safest bet for immediate fix without loading custom fonts.
+  const currencySymbol = currency === 'INR' ? 'Rs.' : '$'
   const currencyLabel = currency === 'INR' ? 'INR' : 'USD'
 
   const drawPageBorder = () => {
@@ -334,7 +337,7 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
         lineColor: [0, 0, 0],
         lineWidth: 0.2,
         fontStyle: "bold",
-        halign: "center",
+        halign: "center" as "center", // Explicit cast to fix type error
         fontSize: 10
       },
       bodyStyles: {

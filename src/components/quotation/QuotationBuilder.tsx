@@ -227,6 +227,7 @@ export default function QuotationBuilder({ initialProducts, settings, user }: Qu
     setMeta({
       number: `QT-${Date.now().toString().slice(-6)}`,
       date: new Date().toISOString().split("T")[0],
+      validity_days: 30,
     })
     setDiscount(0)
     setTerms(DEFAULT_TERMS.map((t, i) => ({ id: `term-${i}`, text: t, selected: true })))
