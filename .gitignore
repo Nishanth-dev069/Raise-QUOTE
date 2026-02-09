@@ -3,3 +3,7 @@ node_modules
 out
 dist
 # .env* # Removed by Orchids to allow .env files
+-e 
+# Environment files
+*.env
+*.env.*
