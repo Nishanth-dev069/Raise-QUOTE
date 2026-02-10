@@ -8,29 +8,22 @@ export async function upsertProduct(formData: FormData) {
   const name = formData.get('name') as string
   const description = formData.get('description') as string
   const price = parseFloat(formData.get('price') as string)
-  const tax_percent = parseFloat(formData.get('tax_percent') as string)
+  const tax_percent = parseFloat(formData.get('tax_percent') as string) || 0
   const active = formData.get('active') === 'true'
   const image_format = formData.get('image_format') as string || 'wide'
-  const imageFile = formData.get('image') as File | null
+  const image_url = formData.get('image_url') as string
 
-  let image_url = formData.get('existing_image_url') as string
+  const sku = formData.get('sku') as string
+  const category = formData.get('category') as string
+  const specsString = formData.get('specs') as string
 
-  if (imageFile && imageFile.size > 0) {
-    const fileExt = imageFile.name.split('.').pop()
-    const fileName = `${Math.random()}.${fileExt}`
-    const filePath = `product-images/${fileName}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('products')
-      .upload(filePath, imageFile)
-
-    if (uploadError) return { error: uploadError.message }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('products')
-      .getPublicUrl(filePath)
-
-    image_url = publicUrl
+  let specs = []
+  try {
+    if (specsString) {
+      specs = JSON.parse(specsString)
+    }
+  } catch (e) {
+    console.error('Failed to parse specs', e)
   }
 
   const productData = {
@@ -40,7 +33,10 @@ export async function upsertProduct(formData: FormData) {
     tax_percent,
     active,
     image_url,
-    image_format
+    image_format,
+    sku,
+    category,
+    specs
   }
 
   if (id) {

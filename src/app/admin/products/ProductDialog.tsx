@@ -14,9 +14,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, Loader2, Image as ImageIcon, LayoutTemplate } from 'lucide-react'
+import { Plus, Loader2, Image as ImageIcon, Trash2 } from 'lucide-react'
 import { upsertProduct } from './actions'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
 import {
   Select,
   SelectContent,
@@ -24,6 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
+interface Spec {
+  key: string
+  value: string
+}
 
 interface Product {
   id: string
@@ -34,28 +40,65 @@ interface Product {
   image_url: string | null
   active: boolean
   image_format?: 'wide' | 'tall'
+  sku?: string
+  category?: string
+  specs?: Spec[]
 }
 
 export default function ProductDialog({ product }: { product?: Product }) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(product?.image_url || null)
+  const [specs, setSpecs] = useState<Spec[]>(product?.specs || [])
+
+  const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsLoading(true)
 
-    const formData = new FormData(e.currentTarget)
+    const form = e.currentTarget
+    const formData = new FormData(form)
+
     // Ensure ID is passed for updates
     if (product?.id) {
       formData.append('id', product.id)
     }
 
-    // Handle image upload logic carefully
-    const imageInput = e.currentTarget.querySelector('input[type="file"]') as HTMLInputElement;
-    if (imageInput?.files?.length === 0 && product?.image_url) {
-      formData.append('existing_image_url', product.image_url)
+    // Client-side image upload
+    const imageInput = form.querySelector('input[type="file"]') as HTMLInputElement
+    const file = imageInput?.files?.[0]
+    let imageUrl = product?.image_url
+
+    if (file) {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `product-images/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        toast.error("Image upload failed: " + uploadError.message)
+        setIsLoading(false)
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath)
+
+      imageUrl = publicUrl
     }
+
+    if (imageUrl) {
+      formData.set('image_url', imageUrl)
+    }
+
+    // Add specs as JSON string
+    formData.set('specs', JSON.stringify(specs))
+    formData.delete('image') // Don't send file to server action
 
     try {
       const result = await upsertProduct(formData)
@@ -67,6 +110,7 @@ export default function ProductDialog({ product }: { product?: Product }) {
         setOpen(false)
       }
     } catch (error) {
+      console.error(error)
       toast.error("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
@@ -79,6 +123,14 @@ export default function ProductDialog({ product }: { product?: Product }) {
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
     }
+  }
+
+  const addSpec = () => setSpecs([...specs, { key: '', value: '' }])
+  const removeSpec = (index: number) => setSpecs(specs.filter((_, i) => i !== index))
+  const updateSpec = (index: number, field: keyof Spec, value: string) => {
+    const newSpecs = [...specs]
+    newSpecs[index][field] = value
+    setSpecs(newSpecs)
   }
 
   return (
@@ -95,8 +147,8 @@ export default function ProductDialog({ product }: { product?: Product }) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl gap-0 p-0 overflow-hidden rounded-2xl border-none bg-white shadow-2xl">
-        <div className="border-b border-gray-100 bg-gray-50/50 p-6">
+      <DialogContent className="max-w-2xl gap-0 p-0 overflow-hidden rounded-2xl border-none bg-white shadow-2xl h-[90vh] flex flex-col">
+        <div className="border-b border-gray-100 bg-gray-50/50 p-6 flex-shrink-0">
           <DialogHeader>
             <DialogTitle className="text-xl font-black tracking-tight text-black">
               {product ? 'Edit Product' : 'New Product'}
@@ -107,8 +159,8 @@ export default function ProductDialog({ product }: { product?: Product }) {
           </DialogHeader>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col">
-          <div className="p-6 space-y-8">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-grow overflow-hidden">
+          <div className="flex-grow overflow-y-auto p-6 space-y-8">
             {/* Image Section */}
             <div className="flex flex-col gap-6 sm:flex-row">
               <div className="flex-shrink-0">
@@ -148,6 +200,29 @@ export default function ProductDialog({ product }: { product?: Product }) {
                       defaultValue={product?.name}
                       placeholder="e.g. Laminar Air Flow"
                       required
+                      className="h-10 rounded-xl border-gray-200 bg-gray-50/50 font-medium focus:bg-white focus:ring-0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category" className="text-xs font-bold text-gray-700">Category</Label>
+                    <Input
+                      id="category"
+                      name="category"
+                      defaultValue={product?.category}
+                      placeholder="e.g. Cleanroom Equipment"
+                      className="h-10 rounded-xl border-gray-200 bg-gray-50/50 font-medium focus:bg-white focus:ring-0"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="sku" className="text-xs font-bold text-gray-700">SKU</Label>
+                    <Input
+                      id="sku"
+                      name="sku"
+                      defaultValue={product?.sku}
+                      placeholder="e.g. SKU-123"
                       className="h-10 rounded-xl border-gray-200 bg-gray-50/50 font-medium focus:bg-white focus:ring-0"
                     />
                   </div>
@@ -194,7 +269,7 @@ export default function ProductDialog({ product }: { product?: Product }) {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="specs" className="text-xs font-bold text-gray-700">Status</Label>
+                    <Label htmlFor="active" className="text-xs font-bold text-gray-700">Status</Label>
                     <div className="flex h-10 items-center gap-3 rounded-xl border border-gray-200 bg-gray-50/50 px-4">
                       <input
                         type="checkbox"
@@ -208,11 +283,45 @@ export default function ProductDialog({ product }: { product?: Product }) {
                     </div>
                   </div>
                 </div>
+
+                {/* Specs Section */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-gray-700">Specifications / Features</Label>
+                    <Button type="button" onClick={addSpec} variant="outline" size="sm" className="h-7 text-xs border-dashed gap-1">
+                      <Plus className="h-3 w-3" /> Add Spec
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {specs.map((spec, index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          placeholder="Feature/Key"
+                          value={spec.key}
+                          onChange={(e) => updateSpec(index, 'key', e.target.value)}
+                          className="h-9 text-xs bg-gray-50/50"
+                        />
+                        <Input
+                          placeholder="Value"
+                          value={spec.value}
+                          onChange={(e) => updateSpec(index, 'value', e.target.value)}
+                          className="h-9 text-xs bg-gray-50/50"
+                        />
+                        <Button type="button" onClick={() => removeSpec(index)} variant="ghost" size="icon" className="h-9 w-9 text-gray-400 hover:text-red-500">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    {specs.length === 0 && (
+                      <p className="text-xs text-gray-400 font-medium italic text-center py-2">No specifications added yet.</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-100 bg-gray-50/50 p-6 flex justify-end gap-3">
+          <div className="border-t border-gray-100 bg-gray-50/50 p-6 flex justify-end gap-3 flex-shrink-0">
             <Button
               type="button"
               variant="outline"

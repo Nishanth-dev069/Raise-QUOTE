@@ -24,7 +24,18 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data: users, error } = await supabase
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  )
+
+  const { data: users, error } = await supabaseAdmin
     .from('profiles')
     .select('id, name:full_name, email, role, active, created_at, phone')
     .order('created_at', { ascending: false })
