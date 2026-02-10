@@ -36,7 +36,7 @@ export async function upsertProduct(formData: FormData) {
     image_format,
     sku,
     category,
-    specs
+    features: specs
   }
 
   if (id) {
