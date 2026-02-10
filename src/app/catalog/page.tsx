@@ -45,7 +45,7 @@ export default async function CatalogPage() {
                     src={product.image_url}
                     alt={product.name}
                     fill
-                    priority={products?.indexOf(product) < 4}
+                    priority={products?.indexOf(product) < 6}
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-contain p-6 transition-transform group-hover:scale-105"
                   />

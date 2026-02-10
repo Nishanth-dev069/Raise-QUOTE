@@ -65,7 +65,7 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("/api/admin/users")
+      const res = await fetch("/api/admin/users", { credentials: "include" })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setUsers(data)
@@ -83,6 +83,7 @@ export default function UsersPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
+        credentials: "include",
       })
 
       if (!res.ok) {
@@ -115,6 +116,7 @@ export default function UsersPage() {
           role: formData.role,
           phone: formData.phone
         }),
+        credentials: "include",
       })
 
       if (!res.ok) {
@@ -139,6 +141,7 @@ export default function UsersPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: user.id, active: !user.active }),
+        credentials: "include",
       })
 
       if (!res.ok) {
@@ -161,6 +164,7 @@ export default function UsersPage() {
       const res = await fetch(`/api/admin/users?id=${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
       })
 
       if (!res.ok) {
@@ -185,6 +189,7 @@ export default function UsersPage() {
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         body: JSON.stringify({ id: selectedUser.id, password: formData.password }),
+        credentials: "include",
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)

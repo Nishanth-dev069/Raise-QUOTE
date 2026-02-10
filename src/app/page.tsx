@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import QuotationBuilder from '@/components/quotation/QuotationBuilder'
 
-export const revalidate = 300 // Revalidate every 5 minutes for better performance
+// export const revalidate = 300 // Revalidate removed
 
 export default async function SalesPage() {
   const supabase = await createClient()
