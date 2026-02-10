@@ -24,10 +24,10 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-    const { data: users, error } = await supabase
-      .from('profiles')
-      .select('id, name:full_name, email, role, active, created_at, phone')
-      .order('created_at', { ascending: false })
+  const { data: users, error } = await supabase
+    .from('profiles')
+    .select('id, name:full_name, email, role, active, created_at, phone')
+    .order('created_at', { ascending: false })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 })
@@ -91,13 +91,12 @@ export async function POST(request: Request) {
         active: true
       })
 
-  if (profileError) {
-    return NextResponse.json({ error: profileError.message }, { status: 400 })
-  }
+    if (profileError) {
+      return NextResponse.json({ error: profileError.message }, { status: 400 })
+    }
 
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('POST /api/admin/users error:', error)
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }
@@ -124,42 +123,41 @@ export async function PATCH(request: Request) {
     const body = await request.json()
     const { id, active, password, name, role, phone } = body
 
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    )
+
+    if (password) {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(id, {
+        password
+      })
+      if (authError) return NextResponse.json({ error: authError.message }, { status: 400 })
     }
-  )
 
-  if (password) {
-    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(id, {
-      password
-    })
-    if (authError) return NextResponse.json({ error: authError.message }, { status: 400 })
-  }
+    if (active !== undefined || name !== undefined || role !== undefined || phone !== undefined) {
+      const updateData: any = {}
+      if (active !== undefined) updateData.active = active
+      if (name !== undefined) updateData.full_name = name
+      if (role !== undefined) updateData.role = role
+      if (phone !== undefined) updateData.phone = phone
 
-  if (active !== undefined || name !== undefined || role !== undefined || phone !== undefined) {
-    const updateData: any = {}
-    if (active !== undefined) updateData.active = active
-    if (name !== undefined) updateData.full_name = name
-    if (role !== undefined) updateData.role = role
-    if (phone !== undefined) updateData.phone = phone
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .update(updateData)
+        .eq('id', id)
 
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .update(updateData)
-      .eq('id', id)
-    
-    if (profileError) return NextResponse.json({ error: profileError.message }, { status: 400 })
-  }
+      if (profileError) return NextResponse.json({ error: profileError.message }, { status: 400 })
+    }
 
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('PATCH /api/admin/users error:', error)
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }
@@ -190,30 +188,29 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Missing ID' }, { status: 400 })
     }
 
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  )
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    )
 
-  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id)
-  if (authError) return NextResponse.json({ error: authError.message }, { status: 400 })
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id)
+    if (authError) return NextResponse.json({ error: authError.message }, { status: 400 })
 
-  const { error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .delete()
-    .eq('id', id)
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .delete()
+      .eq('id', id)
 
-  if (profileError) return NextResponse.json({ error: profileError.message }, { status: 400 })
+    if (profileError) return NextResponse.json({ error: profileError.message }, { status: 400 })
 
-  return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('DELETE /api/admin/users error:', error)
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
   }
 }

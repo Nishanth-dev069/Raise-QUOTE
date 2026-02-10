@@ -50,7 +50,7 @@ export default function UsersPage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isResetOpen, setIsResetOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -84,21 +84,20 @@ export default function UsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
-      
+
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `HTTP ${res.status}`)
       }
-      
+
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      
+
       toast.success("User created successfully")
       setIsCreateOpen(false)
       fetchUsers()
       setFormData({ name: "", email: "", password: "", role: "sales", phone: "" })
     } catch (err: any) {
-      console.error("Create user error:", err)
       toast.error(err.message || "Failed to create user")
     }
   }
@@ -110,27 +109,26 @@ export default function UsersPage() {
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          id: selectedUser.id, 
-          name: formData.name, 
+        body: JSON.stringify({
+          id: selectedUser.id,
+          name: formData.name,
           role: formData.role,
           phone: formData.phone
         }),
       })
-      
+
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `HTTP ${res.status}`)
       }
-      
+
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      
+
       toast.success("User updated successfully")
       setIsEditOpen(false)
       fetchUsers()
     } catch (err: any) {
-      console.error("Update user error:", err)
       toast.error(err.message || "Failed to update user")
     }
   }
@@ -142,12 +140,12 @@ export default function UsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: user.id, active: !user.active }),
       })
-      
+
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `HTTP ${res.status}`)
       }
-      
+
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       toast.success(`User ${user.active ? "deactivated" : "activated"} successfully`)
@@ -164,19 +162,18 @@ export default function UsersPage() {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       })
-      
+
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `HTTP ${res.status}`)
       }
-      
+
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      
+
       toast.success("User deleted successfully")
       fetchUsers()
     } catch (err: any) {
-      console.error("Delete user error:", err)
       toast.error(err.message || "Failed to delete user")
     }
   }
@@ -262,38 +259,38 @@ export default function UsersPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Role</Label>
-                    <Select
-                      value={formData.role}
-                      onValueChange={(v) => setFormData({ ...formData, role: v })}
-                    >
-                      <SelectTrigger className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl border-none shadow-2xl">
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="sales">Sales</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Phone Number</Label>
-                    <Input
-                      className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white"
-                      placeholder="+91 91777 70365"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-black py-4 text-sm font-bold text-white shadow-xl shadow-black/20 transition-all hover:bg-black/90 active:scale-95"
+                  <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Role</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(v) => setFormData({ ...formData, role: v })}
                   >
-                    Create User
-                  </button>
-                </DialogFooter>
+                    <SelectTrigger className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-none shadow-2xl">
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="sales">Sales</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Phone Number</Label>
+                  <Input
+                    className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white"
+                    placeholder="+91 91777 70365"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-black py-4 text-sm font-bold text-white shadow-xl shadow-black/20 transition-all hover:bg-black/90 active:scale-95"
+                >
+                  Create User
+                </button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
@@ -323,56 +320,55 @@ export default function UsersPage() {
                 <TableHead className="h-14 px-6 text-right text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 whitespace-nowrap">Actions</TableHead>
               </TableRow>
             </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-sm font-medium text-gray-400">
-                  Fetching personnel data...
-                </TableCell>
-              </TableRow>
-            ) : filteredUsers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-sm font-medium text-gray-400">
-                  No matching users found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredUsers.map((user) => (
-                <TableRow key={user.id} className="border-gray-50 group hover:bg-gray-50/50 transition-colors">
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-[10px] font-black text-black ring-1 ring-gray-100 uppercase">
-                        {user.name?.[0] || user.email?.[0] || 'U'}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-black">{user.name || 'No Name'}</span>
-                        <span className="text-[10px] font-medium text-gray-400">{user.email}</span>
-                      </div>
-                    </div>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-32 text-center text-sm font-medium text-gray-400">
+                    Fetching personnel data...
                   </TableCell>
-                  <TableCell>
-                    <Badge className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider shadow-none ${
-                      user.role === "admin" 
-                        ? "bg-black text-white" 
+                </TableRow>
+              ) : filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-32 text-center text-sm font-medium text-gray-400">
+                    No matching users found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredUsers.map((user) => (
+                  <TableRow key={user.id} className="border-gray-50 group hover:bg-gray-50/50 transition-colors">
+                    <TableCell className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-[10px] font-black text-black ring-1 ring-gray-100 uppercase">
+                          {user.name?.[0] || user.email?.[0] || 'U'}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-black">{user.name || 'No Name'}</span>
+                          <span className="text-[10px] font-medium text-gray-400">{user.email}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider shadow-none ${user.role === "admin"
+                        ? "bg-black text-white"
                         : "bg-gray-100 text-gray-500"
-                    }`}>
-                      {user.role}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className={`h-1.5 w-1.5 rounded-full ${user.active ? "bg-green-500" : "bg-red-500"}`} />
-                      <span className={`text-xs font-bold ${user.active ? "text-green-600" : "text-red-600"}`}>
-                        {user.active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
-                    {new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </TableCell>
-                  <TableCell className="px-6 text-right">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
+                        }`}>
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className={`h-1.5 w-1.5 rounded-full ${user.active ? "bg-green-500" : "bg-red-500"}`} />
+                        <span className={`text-xs font-bold ${user.active ? "text-green-600" : "text-red-600"}`}>
+                          {user.active ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
+                      {new Date(user.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </TableCell>
+                    <TableCell className="px-6 text-right">
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
                           onClick={() => {
                             setSelectedUser(user)
                             setFormData({ ...formData, name: user.name, email: user.email, role: user.role, phone: user.phone || "" })
@@ -383,41 +379,40 @@ export default function UsersPage() {
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
-                      <button
-                        onClick={() => {
-                          setSelectedUser(user)
-                          setIsResetOpen(true)
-                        }}
-                        className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-black transition-all"
-                        title="Reset Password"
-                      >
-                        <Key className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleToggleStatus(user)}
-                        className={`rounded-lg p-2 transition-all ${
-                          user.active 
-                            ? "text-gray-400 hover:bg-red-50 hover:text-red-500" 
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user)
+                            setIsResetOpen(true)
+                          }}
+                          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-black transition-all"
+                          title="Reset Password"
+                        >
+                          <Key className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(user)}
+                          className={`rounded-lg p-2 transition-all ${user.active
+                            ? "text-gray-400 hover:bg-red-50 hover:text-red-500"
                             : "text-gray-400 hover:bg-green-50 hover:text-green-500"
-                        }`}
-                        title={user.active ? "Deactivate" : "Activate"}
-                      >
-                        {user.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all"
-                        title="Delete User"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                            }`}
+                          title={user.active ? "Deactivate" : "Activate"}
+                        >
+                          {user.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user.id)}
+                          className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all"
+                          title="Delete User"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -431,41 +426,41 @@ export default function UsersPage() {
                 Update user profile information.
               </DialogDescription>
             </DialogHeader>
-              <div className="grid gap-6 py-6">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Full Name</Label>
-                  <Input
-                    required
-                    className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Phone Number</Label>
-                  <Input
-                    className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white"
-                    placeholder="+91 91777 70365"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Role</Label>
-                  <Select
-                    value={formData.role}
-                    onValueChange={(v) => setFormData({ ...formData, role: v })}
-                  >
-                    <SelectTrigger className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-none shadow-2xl">
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="sales">Sales</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="grid gap-6 py-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Full Name</Label>
+                <Input
+                  required
+                  className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
               </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Phone Number</Label>
+                <Input
+                  className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white"
+                  placeholder="+91 91777 70365"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Role</Label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(v) => setFormData({ ...formData, role: v })}
+                >
+                  <SelectTrigger className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-none shadow-2xl">
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="sales">Sales</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <DialogFooter>
               <button
                 type="submit"

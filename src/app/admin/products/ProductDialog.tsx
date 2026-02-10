@@ -67,7 +67,6 @@ export default function ProductDialog({ product }: { product?: Product }) {
         setOpen(false)
       }
     } catch (error) {
-      console.error("Submit error:", error);
       toast.error("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)

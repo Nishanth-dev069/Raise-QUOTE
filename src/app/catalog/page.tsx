@@ -30,8 +30,8 @@ export default async function CatalogPage() {
 
         <div className="relative">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input 
-            placeholder="Search products, SKUs, or categories..." 
+          <Input
+            placeholder="Search products, SKUs, or categories..."
             className="h-12 rounded-xl border-none bg-white pl-11 shadow-sm ring-1 ring-gray-100 focus:ring-black transition-all"
           />
         </div>
@@ -41,11 +41,13 @@ export default async function CatalogPage() {
             <Card key={product.id} className="group overflow-hidden border-none bg-white shadow-sm ring-1 ring-gray-100 rounded-2xl transition-all hover:shadow-xl hover:shadow-black/5">
               <div className="relative h-48 w-full bg-gray-50/50">
                 {product.image_url ? (
-                  <Image 
-                    src={product.image_url} 
-                    alt={product.name} 
-                    fill 
-                    className="object-contain p-6 transition-transform group-hover:scale-105" 
+                  <Image
+                    src={product.image_url}
+                    alt={product.name}
+                    fill
+                    priority={products?.indexOf(product) < 4}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-contain p-6 transition-transform group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-gray-200">
