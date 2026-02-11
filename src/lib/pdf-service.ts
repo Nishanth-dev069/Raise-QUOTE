@@ -226,7 +226,8 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
         const newWidth = imageData.width * ratio
         const newHeight = imageData.height * ratio
 
-        doc.addImage(imageData.base64, "PNG", margin + 5, currentY, newWidth, newHeight)
+        const x = (pageWidth - newWidth) / 2
+        doc.addImage(imageData.base64, "PNG", x, currentY, newWidth, newHeight)
         currentY += newHeight + 10
       }
 
@@ -282,7 +283,7 @@ export const generateQuotationPDF = async ({ quotation, items, settings, user, s
 
         // Ensure new Y is below the taller of the two (features or image)
         const imageEndY = featureStartY + newHeight + 10
-        currentY = Math.max(currentY, imageEndY)
+        currentY = imageEndY // Strict Fix: Ensure content starts below image
       } else {
         currentY += 5
       }

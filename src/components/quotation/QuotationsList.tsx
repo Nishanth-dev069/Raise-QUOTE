@@ -55,16 +55,8 @@ export default function QuotationsList({ user, userId }: { user: any, userId?: s
           profiles!created_by (full_name)
         `)
 
-      if (user?.role !== 'admin') {
-        if (userId) {
-          query = query.eq('created_by', userId)
-        } else {
-          const { data: { user: authUser } } = await supabase.auth.getUser()
-          if (authUser) {
-            query = query.eq('created_by', authUser.id)
-          }
-        }
-      }
+      // RLS Policy handles filtering automatically
+      // if (user?.role !== 'admin') { ... } removed
 
       const { data, error } = await query.order("created_at", { ascending: false })
 
