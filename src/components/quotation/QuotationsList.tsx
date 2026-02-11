@@ -33,7 +33,7 @@ export default function QuotationsList({ user, userId }: { user: any, userId?: s
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState("")
-  
+
   const supabase = createClient()
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function QuotationsList({ user, userId }: { user: any, userId?: s
       }
 
       const { data, error } = await query.order("created_at", { ascending: false })
-      
+
       if (error) throw error
       setQuotations(data as any)
     } catch (error: any) {
@@ -94,7 +94,7 @@ export default function QuotationsList({ user, userId }: { user: any, userId?: s
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link 
+          <Link
             href={user?.role === 'admin' ? "/admin/quotations" : "/"}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-100 bg-white text-gray-400 hover:text-black hover:shadow-sm transition-all"
           >
@@ -109,9 +109,9 @@ export default function QuotationsList({ user, userId }: { user: any, userId?: s
             </p>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={handleRefresh}
           disabled={refreshing || loading}
           className="rounded-xl gap-2 font-bold"
@@ -178,15 +178,31 @@ export default function QuotationsList({ user, userId }: { user: any, userId?: s
                     </TableCell>
                     <TableCell className="px-8 text-right">
                       {q.pdf_url && (
-                        <a
-                          href={q.pdf_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex h-9 items-center gap-2 rounded-xl border border-gray-100 bg-white px-4 text-xs font-bold text-black shadow-sm transition-all hover:bg-gray-50 active:scale-95"
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 gap-2 rounded-xl border-gray-100 font-bold hover:bg-gray-50"
+                          onClick={async () => {
+                            try {
+                              const path = q.pdf_url?.split('/').pop() // Extract filename
+                              if (!path) return
+
+                              const { data, error } = await supabase.storage
+                                .from('quotations-pdfs')
+                                .createSignedUrl(path, 60)
+
+                              if (error) throw error
+                              if (data?.signedUrl) {
+                                window.open(data.signedUrl, '_blank')
+                              }
+                            } catch (err: any) {
+                              toast.error("Failed to download PDF: " + err.message)
+                            }
+                          }}
                         >
                           <Download className="h-3.5 w-3.5" />
                           View PDF
-                        </a>
+                        </Button>
                       )}
                     </TableCell>
                   </TableRow>

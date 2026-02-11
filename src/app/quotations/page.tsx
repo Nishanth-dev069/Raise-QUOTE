@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function SalesQuotationsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
 
   // Strict redirect removed to prevent loop. Client component handles auth state.
   // if (!user) {
@@ -14,11 +14,11 @@ export default async function SalesQuotationsPage() {
   // }
 
   let profile = null
-  if (user) {
+  if (session?.user) {
     const { data } = await supabase
       .from('profiles')
       .select('role, full_name')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single()
     profile = data
   }
@@ -26,7 +26,7 @@ export default async function SalesQuotationsPage() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="mx-auto max-w-6xl p-8">
-        <QuotationsList user={profile} userId={user?.id} />
+        <QuotationsList user={profile} userId={session?.user.id} />
       </div>
     </div>
   )
