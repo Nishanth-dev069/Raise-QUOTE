@@ -1,101 +1,26 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import Image from 'next/image'
 import { Search, Package } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 
-export default function CatalogPage() {
-  const router = useRouter()
+export const dynamic = 'force-dynamic'
 
-  // STRICT FIX Requirement 2: Do NOT create new client every render
-  const [supabase] = useState(() =>
-    createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true
-        }
-      }
-    )
-  )
+export default async function CatalogPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const [session, setSession] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [products, setProducts] = useState<any[]>([])
-
-  // STRICT FIX Requirement: Auth Logic
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      // Only stop loading if NO session (redirecting) OR if we have session (proceed to fetch)
-      // Actually, user strict pattern sets loading false here.
-      // But we need to fetch data too.
-      // Let's stick strictly to user pattern for Auth, but handle data loading separately or essentially
-      // just treat "loading" as "authLoading".
-
-      if (!session) {
-        setLoading(false) // Auth confirmed missing
-        router.replace('/auth/login')
-      } else {
-        // If session exists, we are authenticated. 
-        // We can keep loading true or manage a separate data loading state.
-        // For strict compliance "loading" controls the return null.
-        // So we must set it false to render.
-        setLoading(false)
-      }
-    })
-
-    // Listen for auth state changes
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session)
-        setLoading(false)
-
-        if (!session) {
-          router.replace('/auth/login')
-        }
-      }
-    )
-
-    return () => {
-      listener.subscription.unsubscribe()
-    }
-  }, [supabase, router])
-
-  // Data Fetching Effect (Run only when authenticated)
-  useEffect(() => {
-    if (session) {
-      const fetchProducts = async () => {
-        const { data } = await supabase
-          .from('products')
-          .select('id, name, description, price, image_url, sku, specs, category, active')
-          .eq('active', true)
-          .order('name')
-
-        if (data) setProducts(data)
-      }
-      fetchProducts()
-    }
-  }, [session, supabase])
-
-  // Prevent render while checking session
-  if (loading) {
-    return null
+  if (!user) {
+    redirect('/auth/login')
   }
 
-  // Prevent render if not authenticated
-  if (!session) {
-    return null
-  }
+  const { data: products } = await supabase
+    .from('products')
+    .select('id, name, description, price, image_url, sku, specs, category, active')
+    .eq('active', true)
+    .order('name')
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-8">
