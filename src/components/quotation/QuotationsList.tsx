@@ -52,19 +52,14 @@ export default function QuotationsList({ user, userId }: { user: any, userId?: s
         return
       }
 
-      // Fetch user role from profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', authUser.id)
-        .single()
+      // Check if user is admin using RPC to bypass RLS
+      const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin')
 
-      if (profileError) {
-        console.error('Error fetching profile role:', profileError)
+      if (adminError) {
+        console.error('Error checking admin status:', adminError)
       }
 
-      const userRole = profile?.role
-      console.log('Current User Role:', userRole)
+      console.log('Is Admin (RPC):', isAdmin)
 
       let query = supabase
         .from("quotations")
@@ -80,7 +75,7 @@ export default function QuotationsList({ user, userId }: { user: any, userId?: s
 
       // Restrict sales users to see only their own quotations
       // Admin sees all quotations
-      if (userRole !== 'admin') {
+      if (!isAdmin) {
         console.log('Restricting to user quotations only:', authUser.id)
         query = query.eq('created_by', authUser.id)
       } else {
