@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { createClient } from "@/lib/supabase/client"
+import type { User } from "@supabase/supabase-js"
 
 interface Quotation {
   id: string
@@ -25,26 +26,60 @@ interface Quotation {
   pdf_url: string | null
 }
 
-export default function QuotationsList({ user }: { user: any }) {
+export default function QuotationsList() {
   const supabase = createClient()
 
+  const [user, setUser] = useState<User | null>(null)
   const [quotations, setQuotations] = useState<Quotation[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState("")
 
   useEffect(() => {
-    if (user?.id) {
-      fetchQuotations()
+    // Get initial user and set up auth listener
+    const initAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      if (user) {
+        fetchQuotations(user)
+      } else {
+        setLoading(false)
+      }
     }
-  }, [user])
 
-  const fetchQuotations = async () => {
-    if (!user?.id) return
+    initAuth()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null)
+        if (session?.user) {
+          fetchQuotations(session.user)
+        } else {
+          setQuotations([])
+          setLoading(false)
+        }
+      }
+    )
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  const fetchQuotations = async (currentUser?: User) => {
+    const userToUse = currentUser || user
+    
+    if (!userToUse) {
+      toast.error("Please log in to view quotations")
+      setLoading(false)
+      return
+    }
 
     setLoading(true)
 
     try {
+      // RLS will automatically filter, but we add .eq() for clarity
       const { data, error } = await supabase
         .from("quotations")
         .select(`
@@ -55,14 +90,15 @@ export default function QuotationsList({ user }: { user: any }) {
           created_at,
           pdf_url
         `)
-        .eq("created_by", user.id) // ✅ STRICT USER FILTER
+        .eq("created_by", userToUse.id)
         .order("created_at", { ascending: false })
 
       if (error) throw error
 
       setQuotations(data || [])
     } catch (error: any) {
-      toast.error(error.message)
+      console.error("Fetch error:", error)
+      toast.error(error.message || "Failed to fetch quotations")
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -70,6 +106,10 @@ export default function QuotationsList({ user }: { user: any }) {
   }
 
   const handleRefresh = () => {
+    if (!user) {
+      toast.error("Please log in first")
+      return
+    }
     setRefreshing(true)
     fetchQuotations()
   }
@@ -79,6 +119,17 @@ export default function QuotationsList({ user }: { user: any }) {
       q.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
       q.quotation_number?.toLowerCase().includes(search.toLowerCase())
   )
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Please Log In</h2>
+          <p className="text-gray-600">You need to be logged in to view quotations</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -140,36 +191,46 @@ export default function QuotationsList({ user }: { user: any }) {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
+                  <TableCell colSpan={5} className="text-center py-8">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : filteredQuotations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    No quotations found.
+                  <TableCell colSpan={5} className="text-center py-8">
+                    {search ? "No matching quotations found." : "No quotations yet. Create your first one!"}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredQuotations.map((q) => (
                   <TableRow key={q.id}>
-                    <TableCell>{q.quotation_number}</TableCell>
+                    <TableCell className="font-medium">{q.quotation_number}</TableCell>
                     <TableCell>{q.customer_name}</TableCell>
-                    <TableCell>
-                      ₹{q.grand_total?.toLocaleString()}
+                    <TableCell className="font-semibold">
+                      ₹{q.grand_total?.toLocaleString('en-IN')}
                     </TableCell>
                     <TableCell>
-                      {new Date(q.created_at).toLocaleDateString()}
+                      {new Date(q.created_at).toLocaleDateString('en-IN')}
                     </TableCell>
                     <TableCell className="text-right">
-                      {q.pdf_url && (
-                        <a
-                          href={q.pdf_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      {q.pdf_url ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                          className="h-8 w-8 p-0"
                         >
-                          <Download className="h-4 w-4" />
-                        </a>
+                          
+                            href={q.pdf_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Download PDF"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-gray-400">No PDF</span>
                       )}
                     </TableCell>
                   </TableRow>
