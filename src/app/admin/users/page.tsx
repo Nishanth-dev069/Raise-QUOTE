@@ -9,7 +9,6 @@ import {
   Power,
   PowerOff,
   Trash2,
-  Key,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -63,8 +62,6 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [isResetOpen, setIsResetOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -105,7 +102,6 @@ export default function UsersPage() {
       })
 
     if (authError) return toast.error(authError.message)
-
     if (!authData.user) return toast.error("Failed to create user")
 
     const { error: profileError } = await supabase.from("profiles").insert({
@@ -154,23 +150,6 @@ export default function UsersPage() {
     else {
       toast.success("User deleted")
       fetchUsers()
-    }
-  }
-
-  /* ================= RESET PASSWORD ================= */
-  async function handleResetPassword(e: React.FormEvent) {
-    e.preventDefault()
-    if (!selectedUser) return
-
-    const { error } = await supabase.auth.updateUser({
-      password: formData.password,
-    })
-
-    if (error) toast.error(error.message)
-    else {
-      toast.success("Password updated")
-      setIsResetOpen(false)
-      setFormData({ ...formData, password: "" })
     }
   }
 
@@ -335,16 +314,6 @@ export default function UsersPage() {
                       </DropdownMenuItem>
 
                       <DropdownMenuItem
-                        onClick={() => {
-                          setSelectedUser(user)
-                          setIsResetOpen(true)
-                        }}
-                      >
-                        <Key className="mr-2 h-4 w-4" />
-                        Update Password
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem
                         onClick={() => handleDelete(user)}
                         className="text-red-600"
                       >
@@ -359,40 +328,6 @@ export default function UsersPage() {
           </TableBody>
         </Table>
       </div>
-
-      {/* Reset Password Dialog */}
-      <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
-        <DialogContent className="rounded-2xl p-8">
-          <form onSubmit={handleResetPassword} className="space-y-6">
-            <DialogHeader>
-              <DialogTitle>
-                Update Password for {selectedUser?.full_name}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-2">
-              <Label>New Password</Label>
-              <Input
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-              />
-            </div>
-
-            <DialogFooter>
-              <button
-                type="submit"
-                className="w-full bg-black text-white py-3 rounded-xl font-bold"
-              >
-                Update Password
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
     </div>
   )
