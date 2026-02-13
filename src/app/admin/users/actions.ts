@@ -1,7 +1,6 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { revalidatePath } from 'next/cache'
 
 /* =====================================================
    CREATE USER (Admin or Sales)
@@ -20,7 +19,7 @@ export async function createSalesperson(formData: FormData) {
 
     const supabaseAdmin = createAdminClient()
 
-    // 🔹 Check if auth user already exists
+    // Check if auth user already exists
     const { data: existingAuth } =
       await supabaseAdmin.auth.admin.listUsers()
 
@@ -62,12 +61,10 @@ export async function createSalesperson(formData: FormData) {
       })
 
     if (profileError) {
-      // Cleanup auth user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
       return { error: profileError.message }
     }
 
-    revalidatePath('/admin/users')
     return { success: true }
 
   } catch (err: any) {
@@ -92,7 +89,6 @@ export async function toggleUserStatus(userId: string, active: boolean) {
       return { error: error.message }
     }
 
-    revalidatePath('/admin/users')
     return { success: true }
 
   } catch (err: any) {
@@ -136,7 +132,6 @@ export async function deleteUser(userId: string) {
   try {
     const supabaseAdmin = createAdminClient()
 
-    // 🔹 Delete auth user first
     const { error: authError } =
       await supabaseAdmin.auth.admin.deleteUser(userId)
 
@@ -144,7 +139,6 @@ export async function deleteUser(userId: string) {
       return { error: authError.message }
     }
 
-    // 🔹 Then delete profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .delete()
@@ -154,7 +148,6 @@ export async function deleteUser(userId: string) {
       return { error: profileError.message }
     }
 
-    revalidatePath('/admin/users')
     return { success: true }
 
   } catch (err: any) {
