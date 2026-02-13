@@ -16,11 +16,20 @@ export default async function CatalogPage() {
     redirect('/auth/login')
   }
 
-  const { data: products } = await supabase
-    .from('products')
-    .select('id, name, description, price, image_url, sku, specs, category, active')
-    .eq('active', true)
-    .order('name')
+  // Fetch products - use empty array if query fails to prevent page errors
+  let products: any[] = []
+  try {
+    const { data } = await supabase
+      .from('products')
+      .select('id, name, description, price, image_url, sku, specs, category, active')
+      .eq('active', true)
+      .order('name')
+    products = data || []
+  } catch (error) {
+    // Gracefully handle query errors - show empty catalog instead of redirecting
+    console.error('Products query error:', error)
+    products = []
+  }
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-8">
