@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
-import { Plus, Search, Key, Power, PowerOff, Edit2 } from "lucide-react"
+import { Search } from "lucide-react"
 import { toast } from "sonner"
 
 import { Input } from "@/components/ui/input"
@@ -14,30 +14,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 
-import {
-  createSalesperson,
-  toggleUserStatus,
-  resetUserPassword,
-} from "./actions"
+import CreateUserDialog from "./CreateUserDialog"
+import UserActions from "./UserActions"
 
 interface Profile {
   id: string
@@ -53,17 +33,6 @@ export default function UsersPage() {
   const [users, setUsers] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [isResetOpen, setIsResetOpen] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
-
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "sales",
-    phone: "",
-  })
 
   useEffect(() => {
     fetchUsers()
@@ -72,6 +41,7 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     try {
       const supabase = createClient()
+
       const { data, error } = await supabase
         .from("profiles")
         .select("id, full_name, email, role, active, created_at, phone")
@@ -86,66 +56,6 @@ export default function UsersPage() {
     }
   }
 
-  // CREATE USER
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    const fd = new FormData()
-    fd.append("name", formData.name)
-    fd.append("email", formData.email)
-    fd.append("password", formData.password)
-
-    const result = await createSalesperson(fd)
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success("User created successfully")
-      setIsCreateOpen(false)
-      fetchUsers()
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        role: "sales",
-        phone: "",
-      })
-    }
-  }
-
-  // TOGGLE STATUS
-  const handleToggleStatus = async (user: Profile) => {
-    const result = await toggleUserStatus(user.id, !user.active)
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success(
-        `User ${user.active ? "deactivated" : "activated"} successfully`
-      )
-      fetchUsers()
-    }
-  }
-
-  // RESET PASSWORD
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedUser) return
-
-    const result = await resetUserPassword(
-      selectedUser.id,
-      formData.password
-    )
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success("Password reset successfully")
-      setIsResetOpen(false)
-      setFormData({ ...formData, password: "" })
-    }
-  }
-
   const filteredUsers = users.filter(
     (u) =>
       u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -154,186 +64,112 @@ export default function UsersPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
 
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-black">
+          <h1 className="text-3xl font-black tracking-tight">
             Users
           </h1>
-          <p className="text-sm font-medium text-gray-400">
+          <p className="text-sm text-gray-500">
             Manage your sales team and administrators.
           </p>
         </div>
 
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <button className="flex items-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-bold text-white">
-              <Plus className="h-4 w-4" />
-              Add User
-            </button>
-          </DialogTrigger>
-
-          <DialogContent className="rounded-2xl sm:max-w-[425px]">
-            <form onSubmit={handleCreate}>
-              <DialogHeader>
-                <DialogTitle>Create New User</DialogTitle>
-                <DialogDescription>
-                  Enter details to create account.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid gap-4 py-4">
-                <div>
-                  <Label>Full Name</Label>
-                  <Input
-                    required
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <Label>Email</Label>
-                  <Input
-                    required
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <Label>Password</Label>
-                  <Input
-                    required
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-
-              <DialogFooter>
-                <button
-                  type="submit"
-                  className="w-full bg-black text-white rounded-xl py-3"
-                >
-                  Create User
-                </button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <CreateUserDialog />
       </div>
 
       {/* SEARCH */}
-      <Input
-        placeholder="Search..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+        <Input
+          placeholder="Search by name, email or role..."
+          className="pl-10"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
 
       {/* TABLE */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>User</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Joined</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-
-        <TableBody>
-          {filteredUsers.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>
-                <div>
-                  <div className="font-bold">{user.full_name}</div>
-                  <div className="text-xs text-gray-400">
-                    {user.email}
-                  </div>
-                </div>
-              </TableCell>
-
-              <TableCell>
-                <Badge>{user.role}</Badge>
-              </TableCell>
-
-              <TableCell>
-                {user.active ? "Active" : "Inactive"}
-              </TableCell>
-
-              <TableCell>
-                {new Date(user.created_at).toLocaleDateString()}
-              </TableCell>
-
-              <TableCell className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setSelectedUser(user)
-                    setIsResetOpen(true)
-                  }}
-                >
-                  <Key className="h-4 w-4" />
-                </button>
-
-                <button onClick={() => handleToggleStatus(user)}>
-                  {user.active ? (
-                    <PowerOff className="h-4 w-4" />
-                  ) : (
-                    <Power className="h-4 w-4" />
-                  )}
-                </button>
-              </TableCell>
+      <div className="rounded-2xl border shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead className="text-right">
+                Actions
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
 
-      {/* RESET PASSWORD DIALOG */}
-      <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
-        <DialogContent>
-          <form onSubmit={handleResetPassword}>
-            <DialogHeader>
-              <DialogTitle>Reset Password</DialogTitle>
-              <DialogDescription>
-                Enter new password for {selectedUser?.full_name}
-              </DialogDescription>
-            </DialogHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-10 text-gray-400">
+                  Loading users...
+                </TableCell>
+              </TableRow>
+            ) : filteredUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-10 text-gray-400">
+                  No users found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredUsers.map((user) => (
+                <TableRow key={user.id} className="hover:bg-gray-50 transition-colors">
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-semibold">
+                        {user.full_name}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {user.email}
+                      </span>
+                    </div>
+                  </TableCell>
 
-            <div className="py-4">
-              <Label>New Password</Label>
-              <Input
-                required
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-              />
-            </div>
+                  <TableCell>
+                    <Badge
+                      className={
+                        user.role === "admin"
+                          ? "bg-black text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }
+                    >
+                      {user.role}
+                    </Badge>
+                  </TableCell>
 
-            <DialogFooter>
-              <button
-                type="submit"
-                className="w-full bg-black text-white rounded-xl py-3"
-              >
-                Update Password
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+                  <TableCell>
+                    <span
+                      className={
+                        user.active
+                          ? "text-emerald-600 font-medium"
+                          : "text-red-600 font-medium"
+                      }
+                    >
+                      {user.active ? "Active" : "Inactive"}
+                    </span>
+                  </TableCell>
+
+                  <TableCell>
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    <UserActions user={user} />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
     </div>
   )
