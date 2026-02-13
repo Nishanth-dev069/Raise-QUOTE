@@ -23,10 +23,6 @@ interface Quotation {
   grand_total: number
   created_at: string
   pdf_url: string | null
-  profiles: {
-    full_name: string
-    email: string
-  }
 }
 
 export default function QuotationsList({ user }: { user: any }) {
@@ -38,13 +34,13 @@ export default function QuotationsList({ user }: { user: any }) {
   const [search, setSearch] = useState("")
 
   useEffect(() => {
-    if (user?.email) {
+    if (user?.id) {
       fetchQuotations()
     }
   }, [user])
 
   const fetchQuotations = async () => {
-    if (!user?.email) return
+    if (!user?.id) return
 
     setLoading(true)
 
@@ -57,10 +53,9 @@ export default function QuotationsList({ user }: { user: any }) {
           customer_name,
           grand_total,
           created_at,
-          pdf_url,
-          profiles!created_by (full_name, email)
+          pdf_url
         `)
-        .eq("profiles.email", user.email) // 🔥 STRICT EMAIL MATCH
+        .eq("created_by", user.id) // ✅ STRICT USER FILTER
         .order("created_at", { ascending: false })
 
       if (error) throw error
@@ -99,6 +94,9 @@ export default function QuotationsList({ user }: { user: any }) {
             <h1 className="text-3xl font-black tracking-tight text-black">
               My Quotations
             </h1>
+            <p className="text-sm font-medium text-gray-400">
+              Track your generated quotations.
+            </p>
           </div>
         </div>
 
@@ -126,7 +124,7 @@ export default function QuotationsList({ user }: { user: any }) {
         />
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border-none bg-white shadow-sm ring-1 ring-gray-100">
+      <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
         <div className="min-w-[800px]">
           <Table>
             <TableHeader>
