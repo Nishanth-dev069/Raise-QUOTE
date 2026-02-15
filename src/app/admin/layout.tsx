@@ -36,26 +36,25 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex w-full">
-        <AdminSidebar />
 
-        <SidebarInset className="min-h-screen bg-gray-50/50">
-          
-          {/* Mobile Header */}
-          <div className="flex items-center gap-4 border-b bg-white px-4 py-3 md:hidden">
-            <SidebarTrigger />
-            <span className="font-semibold">Admin Panel</span>
+      <AdminSidebar />
+
+      <SidebarInset>
+        
+        {/* Mobile Top Bar */}
+        <div className="flex items-center gap-4 border-b bg-white px-4 py-3 md:hidden">
+          <SidebarTrigger />
+          <span className="font-semibold">Admin Panel</span>
+        </div>
+
+        <div className="p-4 md:p-8">
+          <div className="mx-auto w-full max-w-7xl">
+            {children}
           </div>
+        </div>
 
-          {/* Main Content Area */}
-          <div className="p-4 md:p-8">
-            <div className="mx-auto w-full max-w-7xl">
-              {children}
-            </div>
-          </div>
+      </SidebarInset>
 
-        </SidebarInset>
-      </div>
     </SidebarProvider>
   )
 }
