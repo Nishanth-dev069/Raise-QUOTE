@@ -1,6 +1,5 @@
 import {
   SidebarProvider,
-  SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
@@ -36,25 +35,24 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-
       <AdminSidebar />
 
-      <SidebarInset>
-        
-        {/* Mobile Top Bar */}
+      <main className="min-h-screen bg-gray-50/50">
+
+        {/* Mobile Header */}
         <div className="flex items-center gap-4 border-b bg-white px-4 py-3 md:hidden">
           <SidebarTrigger />
           <span className="font-semibold">Admin Panel</span>
         </div>
 
-        <div className="p-4 md:p-8">
+        {/* Content */}
+        <div className="p-4 md:p-8 md:pl-64">
           <div className="mx-auto w-full max-w-7xl">
             {children}
           </div>
         </div>
 
-      </SidebarInset>
-
+      </main>
     </SidebarProvider>
   )
 }
