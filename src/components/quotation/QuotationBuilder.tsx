@@ -107,13 +107,13 @@ type Currency = 'INR' | 'USD'
 const DEFAULT_TERMS = [
   "Taxes: 18% GST extra applicable",
   "Packaging & Forwarding: Extra As Applicable",
-  "Fright: To Pay / Extra as applicable",
+  "Freight: To Pay / Extra as applicable",
   "DELIVERY: We deliver the order in 3-4 Weeks from the date of receipt of purchase order",
   "INSTALLATION: Fees extra as applicable",
   "PAYMENT: 100% payment at the time of proforma invoice prior to dispatch.",
-  "WARRANTY_1: One year warranty from the date of dispatch",
-  "WARRANTY_2: Two years warranty from the date of dispatch",
-  "WARRANTY_3: Three years warranty from the date of dispatch",
+  "WARRANTY: One year warranty from the date of dispatch",
+  "WARRANTY: Two years warranty from the date of dispatch",
+  "WARRANTY: Three years warranty from the date of dispatch",
   "GOVERNING LAW: These Terms and Conditions and any action related hereto shall be governed, controlled, interpreted and defined by and under the laws of the State of Telangana",
   "MODIFICATION: Any modification of these Terms and Conditions shall be valid only if it is in writing and signed by the authorized representatives of both Supplier and Customer."
 ]
