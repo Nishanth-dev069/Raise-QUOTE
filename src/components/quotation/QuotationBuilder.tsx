@@ -136,12 +136,13 @@ export default function QuotationBuilder({ initialProducts, settings, user }: Qu
   const [saving, setSaving] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [terms, setTerms] = useState<Term[]>(
-    DEFAULT_TERMS.map((t, i) => ({ 
-      id: `term-${i}`, 
-      text: t, 
-      selected: t.startsWith('WARRANTY_2') || t.startsWith('WARRANTY_3') ? false : true 
-    }))
-  )
+  DEFAULT_TERMS.map((t, i) => ({
+    id: `term-${i}`,
+    text: t,
+    // Only 1-year warranty selected by default
+    selected: !t.startsWith("WARRANTY: Two") && !t.startsWith("WARRANTY: Three")
+  }))
+)
   const [currency, setCurrency] = useState<Currency>('INR')
 
   const supabase = useMemo(() => createClient(), [])
@@ -289,26 +290,27 @@ export default function QuotationBuilder({ initialProducts, settings, user }: Qu
   }, [])
 
   const toggleTerm = useCallback((termId: string) => {
-    setTerms(terms => {
-      const clickedTerm = terms.find(t => t.id === termId)
-      
-      // Check if the clicked term is a warranty option
-      const isWarrantyTerm = clickedTerm?.text.startsWith('WARRANTY_')
-      
-      if (isWarrantyTerm) {
-        // If it's a warranty term, deselect all other warranty terms and select this one
-        return terms.map(t => {
-          if (t.text.startsWith('WARRANTY_')) {
-            return { ...t, selected: t.id === termId }
-          }
-          return t
-        })
-      } else {
-        // For non-warranty terms, just toggle normally
-        return terms.map(t => t.id === termId ? { ...t, selected: !t.selected } : t)
-      }
-    })
-  }, [])
+  setTerms((terms) => {
+    const clickedTerm = terms.find((t) => t.id === termId)
+
+    const isWarrantyTerm = clickedTerm?.text.startsWith("WARRANTY:")
+
+    if (isWarrantyTerm) {
+      // Only one warranty option can be selected
+      return terms.map((t) => {
+        if (t.text.startsWith("WARRANTY:")) {
+          return { ...t, selected: t.id === termId }
+        }
+        return t
+      })
+    }
+
+    // Normal toggle for other terms
+    return terms.map((t) =>
+      t.id === termId ? { ...t, selected: !t.selected } : t
+    )
+  })
+}, [])
 
   const clearQuotation = () => {
     if (!confirm("Are you sure you want to clear this quotation?")) return
@@ -338,11 +340,13 @@ export default function QuotationBuilder({ initialProducts, settings, user }: Qu
     }
     triggerRefetch()
     setDiscount(0)
-    setTerms(DEFAULT_TERMS.map((t, i) => ({ 
-      id: `term-${i}`, 
-      text: t, 
-      selected: t.startsWith('WARRANTY_2') || t.startsWith('WARRANTY_3') ? false : true 
-    })))
+    setTerms(
+  DEFAULT_TERMS.map((t, i) => ({
+    id: `term-${i}`,
+    text: t,
+    selected: !t.startsWith("WARRANTY: Two") && !t.startsWith("WARRANTY: Three")
+  }))
+)
     localStorage.removeItem("quotation_draft")
   }
 
